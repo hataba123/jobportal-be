@@ -1,32 +1,30 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { JobApplicationService } from './job-application.service';
+import { ReviewService } from './review.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
-describe('JobApplicationService', () => {
-  let service: JobApplicationService;
+describe('ReviewService', () => {
+  let service: ReviewService;
   let prisma: PrismaService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        JobApplicationService,
+        ReviewService,
         {
           provide: PrismaService,
           useValue: {
-            job: {
+            review: {
               findMany: jest.fn(),
               findUnique: jest.fn(),
-              create: jest.fn(),
               update: jest.fn(),
               delete: jest.fn(),
             },
-            jobPost: { findUnique: jest.fn(), findFirst: jest.fn() },
-            candidateProfile: { findUnique: jest.fn() },
           },
         },
       ],
     }).compile();
-    service = module.get<JobApplicationService>(JobApplicationService);
+
+    service = module.get<ReviewService>(ReviewService);
     prisma = module.get<PrismaService>(PrismaService);
   });
 
@@ -34,5 +32,5 @@ describe('JobApplicationService', () => {
     expect(service).toBeDefined();
   });
 
-  // Thêm các test case cho từng method nếu cần
+  // Thêm test cho từng method nếu cần
 });

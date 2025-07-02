@@ -1,32 +1,30 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { JobApplicationService } from './job-application.service';
+import { CompanyService } from './company.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
-describe('JobApplicationService', () => {
-  let service: JobApplicationService;
+describe('CompanyService', () => {
+  let service: CompanyService;
   let prisma: PrismaService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        JobApplicationService,
+        CompanyService,
         {
           provide: PrismaService,
           useValue: {
-            job: {
+            company: {
               findMany: jest.fn(),
               findUnique: jest.fn(),
               create: jest.fn(),
               update: jest.fn(),
               delete: jest.fn(),
             },
-            jobPost: { findUnique: jest.fn(), findFirst: jest.fn() },
-            candidateProfile: { findUnique: jest.fn() },
           },
         },
       ],
     }).compile();
-    service = module.get<JobApplicationService>(JobApplicationService);
+    service = module.get<CompanyService>(CompanyService);
     prisma = module.get<PrismaService>(PrismaService);
   });
 
