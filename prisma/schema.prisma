@@ -1,0 +1,219 @@
+// Định nghĩa datasource và generator cho PostgreSQL
+// Chỉnh sửa lại DATABASE_URL trong .env cho đúng thông tin kết nối
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enum trạng thái apply job
+/// Trạng thái ứng tuyển
+enum ApplyStatus {
+  Pending
+  Reviewed
+  Accepted
+  Rejected
+}
+
+// Enum vai trò người dùng
+/// Vai trò người dùng
+enum UserRole {
+  Admin
+  Recruiter
+  Candidate
+}
+
+/// Bảng người dùng hệ thống
+model User {
+  id         String      @id @default(uuid())
+  email      String      @unique
+  passwordHash String
+  fullName   String
+  createdAt  DateTime    @default(now())
+  role       UserRole    @default(Candidate)
+  // Quan hệ
+  candidateProfile CandidateProfile?
+  jobPosts    JobPost[]  @relation("EmployerJobs")
+  jobs        Job[]      @relation("CandidateJobs")
+  notifications Notification[]
+  reviews     Review[]
+  savedJobs   SavedJob[]
+}
+
+/// Bảng blog
+model Blog {
+  id         Int         @id @default(autoincrement())
+  title      String      @db.VarChar(200)
+  excerpt    String      @db.VarChar(500)
+  content    String
+  slug       String?     @db.VarChar(100)
+  category   String      @db.VarChar(50)
+  tags       String      // JSON string hoặc chuỗi phân cách
+  publishedAt DateTime
+  readTime   String?     @db.VarChar(20)
+  views      Int         @default(0)
+  likes      Int         @default(0)
+  featured   Boolean     @default(false)
+  image      String?     @db.VarChar(500)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime?
+  authorId   Int
+  author     BlogAuthor  @relation(fields: [authorId], references: [id])
+  blogViews  BlogView[]
+  blogLikes  BlogLike[]
+}
+
+/// Tác giả blog
+model BlogAuthor {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  avatar    String?  @db.VarChar(500)
+  role      String?  @db.VarChar(100)
+  createdAt DateTime @default(now())
+  blogs     Blog[]
+}
+
+/// Danh mục blog
+model BlogCategory {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(50)
+  description String?  @db.VarChar(200)
+  createdAt   DateTime @default(now())
+}
+
+/// Lượt xem blog
+model BlogView {
+  id        Int      @id @default(autoincrement())
+  blogId    Int
+  userId    String?
+  ipAddress String?
+  viewedAt  DateTime @default(now())
+  blog      Blog     @relation(fields: [blogId], references: [id])
+}
+
+/// Lượt thích blog
+model BlogLike {
+  id      Int      @id @default(autoincrement())
+  blogId  Int
+  userId  String
+  likedAt DateTime @default(now())
+  blog    Blog     @relation(fields: [blogId], references: [id])
+}
+
+/// Hồ sơ ứng viên
+model CandidateProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  resumeUrl   String?  @db.VarChar(300)
+  experience  String?  @db.VarChar(1000)
+  skills      String?  @db.VarChar(500)
+  education   String?  @db.VarChar(200)
+  dob         DateTime?
+  gender      String?  @db.VarChar(10)
+  portfolioUrl String? @db.VarChar(300)
+  linkedinUrl String?  @db.VarChar(300)
+  githubUrl   String?  @db.VarChar(300)
+  certificates String? @db.VarChar(1000)
+  summary     String?  @db.VarChar(1000)
+}
+
+/// Danh mục ngành nghề
+model Category {
+  id     String  @id @default(uuid())
+  name   String  @db.VarChar(100)
+  icon   String? @db.VarChar(200)
+  color  String? @db.VarChar(50)
+  jobPosts JobPost[]
+}
+
+/// Công ty
+model Company {
+  id          String  @id @default(uuid())
+  name        String  @db.VarChar(200)
+  logo        String? @db.VarChar(300)
+  description String? @db.VarChar(1000)
+  location    String? @db.VarChar(100)
+  employees   String? @db.VarChar(50)
+  industry    String? @db.VarChar(100)
+  openJobs    Int
+  rating      Float
+  website     String? @db.VarChar(200)
+  founded     String? @db.VarChar(10)
+  tags        String? @db.VarChar(500)
+  userId      String?
+  jobPosts    JobPost[]
+  reviews     Review[]
+}
+
+/// Bảng ứng tuyển job
+model Job {
+  id          String      @id @default(uuid())
+  jobPostId   String
+  candidateId String
+  appliedAt   DateTime
+  cvUrl       String?     @db.VarChar(300)
+  status      ApplyStatus @default(Pending)
+  jobPost     JobPost     @relation(fields: [jobPostId], references: [id])
+  candidate   User        @relation("CandidateJobs", fields: [candidateId], references: [id])
+}
+
+/// Bảng đăng tin tuyển dụng
+model JobPost {
+  id           String    @id @default(uuid())
+  title        String    @db.VarChar(200)
+  description  String
+  skillsRequired String? @db.VarChar(500)
+  location     String?   @db.VarChar(100)
+  salary       Decimal   @db.Decimal(18,2)
+  employerId   String
+  employer     User      @relation("EmployerJobs", fields: [employerId], references: [id])
+  companyId    String?
+  company      Company?  @relation(fields: [companyId], references: [id])
+  logo         String?   @db.VarChar(300)
+  type         String?   @db.VarChar(50)
+  tags         String?   @db.VarChar(500)
+  applicants   Int
+  createdAt    DateTime  @default(now())
+  categoryId   String
+  category     Category  @relation(fields: [categoryId], references: [id])
+  jobs         Job[]
+  savedJobs    SavedJob[]
+}
+
+/// Thông báo
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  message   String
+  read      Boolean
+  createdAt DateTime @default(now())
+  type      String?  @db.VarChar(50)
+}
+
+/// Đánh giá công ty
+model Review {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  rating    Int
+  comment   String?  @db.VarChar(1000)
+  createdAt DateTime @default(now())
+}
+
+/// Công việc đã lưu
+model SavedJob {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  jobPostId String
+  jobPost   JobPost  @relation(fields: [jobPostId], references: [id])
+  savedAt   DateTime @default(now())
+}
