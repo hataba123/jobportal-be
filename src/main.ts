@@ -28,7 +28,8 @@ async function bootstrap() {
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
   );
 
-  // Cấu hình Swagger
+  // Cấu hình Swagger cho tài liệu API
+  // Truy cập http://localhost:5000/swagger để xem giao diện Swagger UI
   const config = new DocumentBuilder()
     .setTitle('Job Portal API')
     .setDescription('API documentation')
