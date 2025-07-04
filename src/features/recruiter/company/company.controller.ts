@@ -33,7 +33,20 @@ export class RecruiterCompanyController {
       throw new NotFoundException(
         'Không tìm thấy công ty mà bạn đang quản lý.',
       );
-    return company;
+    // Đảm bảo trả về tags là mảng string cho FE
+    return {
+      ...company,
+      // Đảm bảo tags luôn là mảng string, fix lỗi type 'never'
+      tags:
+        typeof company.tags === 'string'
+          ? (company.tags as string)
+              .split(',')
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : Array.isArray(company.tags)
+            ? (company.tags as string[])
+            : [],
+    };
   }
 
   // Cập nhật thông tin công ty
@@ -44,6 +57,7 @@ export class RecruiterCompanyController {
     @Body() dto: RecruiterUpdateCompanyDto,
   ): Promise<void> {
     const recruiterId = req.user?.userId;
+    // DTO đã tự động convert và cắt length, không cần xử lý thêm
     const success = await this.companyService.updateMyCompany(recruiterId, dto);
     if (!success)
       throw new NotFoundException(

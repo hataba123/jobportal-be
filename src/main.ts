@@ -47,6 +47,7 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: false, // Tự động loại bỏ field không khai báo trong DTO, không báo lỗi
+      transform: true, // Cho phép @Transform hoạt động, convert dữ liệu trước khi validate
     }),
   );
 

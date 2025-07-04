@@ -151,9 +151,18 @@ export class JobApplicationService implements IJobApplicationService {
     return !!updated;
   }
 
-  // Admin: xóa record ứng tuyển
+  // Admin: xóa record ứng tuyển, trả về false nếu không tìm thấy
   async delete(id: string): Promise<boolean> {
-    await this.prisma.job.delete({ where: { id } });
-    return true;
+    try {
+      await this.prisma.job.delete({ where: { id } });
+      return true;
+    } catch (error) {
+      // Nếu lỗi là không tìm thấy record (P2025), trả về false, không throw
+      if (error?.code === 'P2025') {
+        return false;
+      }
+      // Các lỗi khác vẫn throw để controller log
+      throw error;
+    }
   }
 }

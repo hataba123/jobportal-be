@@ -72,10 +72,19 @@ export class JobApplicationController {
     return { message: 'Cập nhật trạng thái thành công' };
   }
 
-  // Admin: xóa record ứng tuyển
+  // Admin: xóa record ứng tuyển, bắt log lỗi
   @Delete(':id')
   async delete(@Param('id') id: string) {
-    await this.jobApplicationService.delete(id);
-    return { message: 'Xóa thành công' };
+    try {
+      const deleted = await this.jobApplicationService.delete(id);
+      if (!deleted) {
+        return { message: 'Không tìm thấy record để xóa', notFound: true };
+      }
+      return { message: 'Xóa thành công' };
+    } catch (error) {
+      // Ghi log lỗi chi tiết khi xóa job application
+      console.error('Lỗi xóa job application:', { id, error });
+      throw error;
+    }
   }
 }

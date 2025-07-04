@@ -29,9 +29,26 @@ export class RecruiterCompanyService implements IRecruiterCompanyService {
       include: { company: true },
     });
     if (!jobPost?.company) return false;
+    // Chuẩn hóa tags và founded: đảm bảo đúng type cho Prisma
+    let founded = dto.founded;
+    if (
+      typeof founded !== 'string' &&
+      founded !== undefined &&
+      founded !== null
+    ) {
+      founded = String(founded);
+    }
+    if (typeof founded === 'string' && founded.length > 10) {
+      founded = founded.slice(0, 10);
+    }
+    const data = {
+      ...dto,
+      founded,
+      tags: Array.isArray(dto.tags) ? dto.tags.join(',') : (dto.tags ?? ''),
+    };
     await this.prisma.company.update({
       where: { id: jobPost.company.id },
-      data: dto,
+      data,
     });
     return true;
   }

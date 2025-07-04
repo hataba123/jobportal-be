@@ -7,8 +7,10 @@ import {
   IsNumber,
   MaxLength,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 // DTO trả về thông tin công ty
+// DTO trả về thông tin công ty cho recruiter
 export class RecruiterCompanyDto {
   @IsUUID()
   id: string;
@@ -58,10 +60,8 @@ export class RecruiterCompanyDto {
   @MaxLength(10)
   founded?: string;
 
-  @IsString()
-  @IsOptional()
-  @MaxLength(500)
-  tags?: string;
+  // Trả về tags là mảng string cho FE
+  tags?: string[];
 }
 
 // DTO cập nhật công ty
@@ -89,6 +89,9 @@ export class RecruiterUpdateCompanyDto {
   @IsString()
   @IsOptional()
   @MaxLength(50)
+  @Transform(({ value }) =>
+    value !== undefined && value !== null ? String(value).slice(0, 50) : value,
+  )
   employees?: string;
 
   @IsString()
@@ -112,10 +115,12 @@ export class RecruiterUpdateCompanyDto {
   @IsString()
   @IsOptional()
   @MaxLength(10)
+  @Transform(({ value }) =>
+    value !== undefined && value !== null ? String(value).slice(0, 10) : value,
+  )
   founded?: string;
 
-  @IsString()
+  // Cho phép FE gửi tags là string hoặc string[]
   @IsOptional()
-  @MaxLength(500)
-  tags?: string;
+  tags?: string | string[];
 }
