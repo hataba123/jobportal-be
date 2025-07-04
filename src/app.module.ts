@@ -15,6 +15,14 @@ import { NotificationModule } from './features/admin/notification/notification.m
 import { JobPostModule as AdminJobPostModule } from './features/admin/job-post/job-post.module';
 import { DashboardModule as AdminDashboardModule } from './features/admin/dashboard/dashboard.module';
 import { CompanyModule } from './features/admin/company/company.module';
+// User modules
+import { BlogsModule } from './features/user/blogs/blogs.module';
+import { CategoryModule } from './features/user/category/category.module';
+import { CompanyModule as UserCompanyModule } from './features/user/company/company.module';
+import { NotificationModule as UserNotificationModule } from './features/user/notification/notification.module';
+import { ReviewModule as UserReviewModule } from './features/user/review/review.module';
+import { SavedJobModule } from './features/user/saved-job/saved-job.module';
+import { AuthModule } from './features/auth/auth.module';
 
 @Module({
   imports: [
@@ -29,6 +37,13 @@ import { CompanyModule } from './features/admin/company/company.module';
     AdminJobPostModule,
     AdminDashboardModule,
     CompanyModule,
+    BlogsModule,
+    CategoryModule,
+    UserCompanyModule,
+    UserNotificationModule,
+    UserReviewModule,
+    SavedJobModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
