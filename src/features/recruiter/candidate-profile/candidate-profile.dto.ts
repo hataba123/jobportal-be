@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsDate,
   MaxLength,
+  IsDateString,
 } from 'class-validator';
 import { ApplyStatus } from '@prisma/client';
 
@@ -45,9 +46,10 @@ export class CandidateProfileDetailDto {
   @IsString()
   @IsOptional()
   education?: string;
-  @IsDate()
+  // Nhận ngày sinh dạng string ISO ("1991-12-04") từ FE
+  @IsDateString()
   @IsOptional()
-  dob?: Date;
+  dob?: string;
   @IsString()
   @IsOptional()
   gender?: string;
@@ -89,9 +91,10 @@ export class CandidateProfileUpdateDto {
   @IsString()
   @IsOptional()
   education?: string;
-  @IsDate()
+  // Nhận ngày sinh dạng string ISO ("1991-12-04") từ FE
+  @IsDateString()
   @IsOptional()
-  dob?: Date;
+  dob?: string;
   @IsString()
   @IsOptional()
   gender?: string;

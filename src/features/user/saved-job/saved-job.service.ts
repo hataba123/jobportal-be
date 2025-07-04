@@ -25,7 +25,13 @@ export class SavedJobService implements ISavedJobService {
   }
 
   // Lưu job
+  // Lưu job, kiểm tra userId hợp lệ trước khi lưu
   async saveJobAsync(userId: string, jobPostId: string): Promise<void> {
+    if (!userId) {
+      throw new BadRequestException(
+        'Thiếu thông tin user, vui lòng đăng nhập lại!',
+      );
+    }
     const exists = await this.prisma.savedJob.findFirst({
       where: { userId, jobPostId },
     });

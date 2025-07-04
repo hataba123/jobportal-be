@@ -18,6 +18,20 @@ export class BlogService implements IBlogService {
   private readonly logger = new Logger(BlogService.name);
   constructor(private readonly prisma: PrismaService) {}
 
+  // Hàm chuyển role string sang index enum (0: Admin, 1: Recruiter, 2: Candidate)
+  private mapUserRoleToIndex(role: string): number {
+    switch (role) {
+      case 'Admin':
+        return 0;
+      case 'Recruiter':
+        return 1;
+      case 'Candidate':
+        return 2;
+      default:
+        return -1;
+    }
+  }
+
   // Lấy danh sách blog với filter/search
   async getBlogsAsync(searchDto: BlogSearchDto): Promise<BlogResponseDto> {
     try {
@@ -60,7 +74,7 @@ export class BlogService implements IBlogService {
           include: { author: true },
         }),
       ]);
-      const blogDtos = blogs.map(this.mapToDto);
+      const blogDtos: BlogDto[] = blogs.map(this.mapToDto.bind(this));
       return {
         blogs: blogDtos,
         total,
@@ -83,7 +97,7 @@ export class BlogService implements IBlogService {
         take: 6,
         include: { author: true },
       });
-      return blogs.map(this.mapToDto);
+      return blogs.map(this.mapToDto.bind(this)) as BlogDto[];
     } catch (ex) {
       this.logger.error('Error getting featured blogs', ex);
       throw ex;
@@ -275,11 +289,12 @@ export class BlogService implements IBlogService {
       const authors = await this.prisma.blogAuthor.findMany({
         take: 5,
       });
+      // Trả về danh sách tác giả với role là số (enum index)
       return authors.map((a) => ({
         id: a.id,
         name: a.name,
         avatar: a.avatar || '',
-        role: a.role || '',
+        role: this.mapUserRoleToIndex(a.role ?? ''),
       }));
     } catch (ex) {
       this.logger.error('Error getting featured authors', ex);
@@ -288,6 +303,7 @@ export class BlogService implements IBlogService {
   }
 
   // Chuyển entity sang DTO
+  // Chuyển entity blog sang BlogDto, role trả về số
   private mapToDto(blog: any): BlogDto {
     let tags: string[] = [];
     try {
@@ -316,9 +332,9 @@ export class BlogService implements IBlogService {
             id: blog.author.id,
             name: blog.author.name,
             avatar: blog.author.avatar || '',
-            role: blog.author.role || '',
+            role: this.mapUserRoleToIndex(blog.author.role ?? ''),
           }
-        : { id: 0, name: '', avatar: '', role: '' },
+        : { id: 0, name: '', avatar: '', role: -1 },
     };
   }
 }

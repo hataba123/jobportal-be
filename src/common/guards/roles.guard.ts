@@ -12,6 +12,7 @@ import { Reflector } from '@nestjs/core';
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
+  // Kiểm tra user có role phù hợp với requiredRoles không
   canActivate(context: ExecutionContext): boolean {
     const requiredRoles = this.reflector.getAllAndOverride<string[]>('roles', [
       context.getHandler(),
@@ -21,10 +22,11 @@ export class RolesGuard implements CanActivate {
       return true;
     }
     const { user } = context.switchToHttp().getRequest();
-    if (!user || !user.roles) {
+    if (!user || user.role === undefined) {
       throw new ForbiddenException('Bạn không có quyền truy cập');
     }
-    const hasRole = requiredRoles.some((role) => user.roles.includes(role));
+    // So sánh role dạng số hoặc string đều được
+    const hasRole = requiredRoles.some((role) => user.role == role);
     if (!hasRole) {
       throw new ForbiddenException('Bạn không có quyền truy cập');
     }

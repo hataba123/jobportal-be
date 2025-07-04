@@ -7,7 +7,10 @@ import {
   Patch,
   Delete,
   Req,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
 import { JobApplicationService } from './job-application.service';
 import {
   JobApplicationRequest,
@@ -15,13 +18,16 @@ import {
 } from './job-application.dto';
 
 // Controller quản lý ứng tuyển việc làm
-@Controller('job-application')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('api/jobapplication')
 export class JobApplicationController {
   constructor(private readonly jobApplicationService: JobApplicationService) {}
 
   // Ứng viên ứng tuyển vào job
-  @Post('apply')
+  // Bắt buộc xác thực JWT, log user để debug lỗi xác thực
+  @Post()
   async applyToJob(@Req() req, @Body() request: JobApplicationRequest) {
+    console.log('[DEBUG][applyToJob] req.user:', req.user);
     const candidateId = req.user?.userId;
     await this.jobApplicationService.applyToJob(candidateId, request);
     return { message: 'Ứng tuyển thành công' };

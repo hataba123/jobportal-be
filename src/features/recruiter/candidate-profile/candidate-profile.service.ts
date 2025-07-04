@@ -64,7 +64,11 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
       experience: c.experience ?? undefined,
       skills: c.skills ?? undefined,
       education: c.education ?? undefined,
-      dob: c.dob ?? undefined,
+      dob: c.dob
+        ? c.dob instanceof Date
+          ? c.dob.toISOString().slice(0, 10)
+          : c.dob
+        : undefined,
       gender: c.gender ?? undefined,
       portfolioUrl: c.portfolioUrl ?? undefined,
       linkedinUrl: c.linkedinUrl ?? undefined,
@@ -143,7 +147,11 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
       experience: c.experience ?? undefined,
       skills: c.skills ?? undefined,
       education: c.education ?? undefined,
-      dob: c.dob ?? undefined,
+      dob: c.dob
+        ? c.dob instanceof Date
+          ? c.dob.toISOString().slice(0, 10)
+          : c.dob
+        : undefined,
       gender: c.gender ?? undefined,
       portfolioUrl: c.portfolioUrl ?? undefined,
       linkedinUrl: c.linkedinUrl ?? undefined,
@@ -156,26 +164,45 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
 
   // Cập nhật profile ứng viên
   // Cập nhật profile ứng viên
+  // Cập nhật profile ứng viên, chỉ update nếu đã có, không tự động tạo mới
   async update(
     userId: string,
     dto: CandidateProfileUpdateDto,
   ): Promise<boolean> {
     try {
+      console.log('Update candidateProfile:', { userId, dto });
+      // Tách trường user và trường profile
+      const { fullName, email, ...profileData } = dto;
+      // Chuẩn hóa dob và loại bỏ undefined
+      const cleanProfileData: any = {};
+      for (const key in profileData) {
+        if (profileData[key] !== undefined) {
+          if (key === 'dob' && typeof profileData[key] === 'string') {
+            // Nếu dob là string dạng YYYY-MM-DD thì convert sang Date, chỉ khi khác rỗng
+            if (profileData.dob) {
+              cleanProfileData.dob = new Date(profileData.dob as string);
+            }
+          } else {
+            cleanProfileData[key] = profileData[key];
+          }
+        }
+      }
       const profile = await this.prisma.candidateProfile.update({
         where: { userId },
-        data: { ...dto },
+        data: cleanProfileData,
       });
-      if (dto.fullName || dto.email) {
+      if (fullName || email) {
         await this.prisma.user.update({
           where: { id: userId },
           data: {
-            fullName: dto.fullName,
-            email: dto.email,
+            ...(fullName ? { fullName } : {}),
+            ...(email ? { email } : {}),
           },
         });
       }
       return !!profile;
-    } catch {
+    } catch (e) {
+      console.error('Lỗi update candidateProfile:', e);
       return false;
     }
   }

@@ -8,7 +8,9 @@ import {
   IsDate,
   ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
+// DTO tác giả blog, role trả về dạng số (enum index)
 export class BlogAuthorDto {
   @IsInt()
   id: number;
@@ -16,8 +18,8 @@ export class BlogAuthorDto {
   name: string;
   @IsString()
   avatar: string;
-  @IsString()
-  role: string;
+  @IsInt()
+  role: number; // 0: Admin, 1: Recruiter, 2: Candidate
 }
 
 export class BlogCategoryDto {
@@ -93,9 +95,11 @@ export class BlogSearchDto {
   @IsOptional()
   sort?: string;
   @IsInt()
+  @Type(() => Number)
   @IsOptional()
   page?: number = 1;
   @IsInt()
+  @Type(() => Number)
   @IsOptional()
   limit?: number = 10;
 }

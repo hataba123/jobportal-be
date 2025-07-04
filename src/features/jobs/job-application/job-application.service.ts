@@ -20,21 +20,30 @@ export class JobApplicationService implements IJobApplicationService {
   constructor(private readonly prisma: PrismaService) {}
 
   // Ứng viên ứng tuyển vào job
+  // Kiểm tra đầu vào, đảm bảo candidateId không undefined, tránh lỗi Prisma
   async applyToJob(
     candidateId: string,
     request: JobApplicationRequest,
   ): Promise<void> {
+    // Kiểm tra candidateId hợp lệ
+    if (!candidateId) {
+      // Nếu không xác thực được user, trả về lỗi rõ ràng
+      throw new BadRequestException('Không xác thực được user ứng tuyển.');
+    }
+    // Tìm job post theo id
     const jobPost = await this.prisma.jobPost.findUnique({
       where: { id: request.jobPostId },
     });
     if (!jobPost) throw new NotFoundException('Công việc không tồn tại.');
 
+    // Tìm candidate profile theo userId
     const candidateProfile = await this.prisma.candidateProfile.findUnique({
       where: { userId: candidateId },
     });
     if (!candidateProfile)
       throw new NotFoundException('Hồ sơ ứng viên chưa tồn tại.');
 
+    // Lấy url CV từ request hoặc profile
     let cvUrl = request.cvUrl ?? candidateProfile.resumeUrl ?? undefined;
     if (!cvUrl)
       throw new BadRequestException('Bạn cần tải lên CV trước khi ứng tuyển.');

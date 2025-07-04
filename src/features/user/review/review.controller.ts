@@ -31,11 +31,16 @@ export class ReviewController {
     return this.reviewService.getByCompanyAsync(companyId);
   }
 
-  // Tạo mới review
+  // Tạo mới review - chỉ user đã đăng nhập mới được phép
   @Post()
   @UseGuards(JwtAuthGuard)
   async create(@Req() req, @Body() request: CreateReviewRequest) {
-    const userId = req.user.userId;
+    // Lấy userId từ JWT payload đã validate
+    const userId = req.user?.userId;
+    if (!userId) {
+      // Nếu không có userId, trả về lỗi rõ ràng cho FE
+      throw new Error('JWT payload không có userId, vui lòng đăng nhập lại!');
+    }
     await this.reviewService.createAsync(userId, request);
     return { message: 'Đánh giá đã được gửi.' };
   }

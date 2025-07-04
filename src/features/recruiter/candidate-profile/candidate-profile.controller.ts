@@ -22,6 +22,7 @@ import {
   CandidateProfileUpdateDto,
   CandidateSearchRequest,
 } from './candidate-profile.dto';
+import { UserRoleEnum } from 'src/features/auth/auth.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
@@ -35,7 +36,7 @@ export class RecruiterCandidateProfileController {
 
   // Lấy profile ứng viên (self)
   @Get('me')
-  @Roles('Candidate')
+  @Roles(UserRoleEnum.Candidate.toString())
   async getProfile(@Req() req: Request) {
     const userId = req.user?.['userId'];
     if (!userId) throw new UnauthorizedException('Không xác thực được user');
@@ -46,7 +47,7 @@ export class RecruiterCandidateProfileController {
 
   // Cập nhật profile ứng viên (self)
   @Put('me')
-  @Roles('Candidate')
+  @Roles(UserRoleEnum.Candidate.toString())
   async updateProfile(
     @Req() req: Request,
     @Body() dto: CandidateProfileUpdateDto,
@@ -109,21 +110,62 @@ export class RecruiterCandidateProfileController {
     return await this.candidateService.getCandidatesForRecruiter(recruiterId);
   }
 
-  // Upload CV cho ứng viên (self)
+  // Upload CV cho ứng viên (self) - Fastify multipart
+  // Viết lại CHUẨN Fastify: lấy file từ req.parts(), log chi tiết lỗi để debug
   @Post('me/upload-cv')
-  @Roles('Candidate')
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadCv(@Req() req: Request, @UploadedFile() file: any) {
+  @Roles(UserRoleEnum.Candidate.toString())
+  async uploadCv(@Req() req: any) {
+    // Lấy userId từ request (Fastify)
     const userId = req.user?.['userId'];
     if (!userId) throw new UnauthorizedException('Không xác thực được user');
-    const url = await this.candidateService.uploadCv(userId, file);
-    if (!url) throw new NotFoundException('Không tìm thấy đơn ứng tuyển.');
-    return { url };
+    // Khai báo đúng kiểu cho fileData
+    let fileData: { originalname: string; buffer: Buffer } | null = null;
+    try {
+      // Lấy file từ multipart (Fastify)
+      const parts = req.parts ? req.parts() : req.raw.parts();
+      for await (const part of parts) {
+        if (part.type === 'file') {
+          // Log thông tin file nhận được
+          console.log(
+            '[UPLOAD-CV] Nhận file:',
+            part.filename,
+            part.fieldname,
+            part.mimetype,
+          );
+          const chunks: Buffer[] = [];
+          for await (const chunk of part.file) {
+            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+          }
+          fileData = {
+            originalname: part.filename,
+            buffer: Buffer.concat(chunks),
+          };
+          break;
+        }
+      }
+      if (!fileData) {
+        console.error('[UPLOAD-CV] Không nhận được file từ multipart');
+        throw new NotFoundException('Không nhận được file CV');
+      }
+      // Gọi service upload
+      const url = await this.candidateService.uploadCv(userId, fileData);
+      if (!url) {
+        console.error('[UPLOAD-CV] Không tìm thấy đơn ứng tuyển khi upload');
+        throw new NotFoundException('Không tìm thấy đơn ứng tuyển.');
+      }
+      return { url };
+    } catch (err) {
+      // Log lỗi chi tiết để debug
+      console.error('[UPLOAD-CV] Lỗi upload CV:', err);
+      throw err?.status && err?.message
+        ? err
+        : new Error('Lỗi upload CV: ' + (err?.message || err));
+    }
   }
 
   // Xóa CV ứng viên (self)
   @Delete('me/delete-cv')
-  @Roles('Candidate')
+  @Roles(UserRoleEnum.Candidate.toString())
   async deleteCv(@Req() req: Request) {
     const userId = req.user?.['userId'];
     if (!userId) throw new UnauthorizedException('Không xác thực được user');

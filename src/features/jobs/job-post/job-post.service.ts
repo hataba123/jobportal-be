@@ -37,18 +37,69 @@ export class JobPostService implements IJobPostService {
     return true;
   }
 
-  // Lấy chi tiết job post
-  async getById(id: string): Promise<any> {
-    return this.prisma.jobPost.findUnique({ where: { id } });
+  // Lấy chi tiết job post theo id, trả về 404 nếu không tìm thấy
+  async getById(id: string) {
+    const jobPost = await this.prisma.jobPost.findUnique({ where: { id } });
+    console.log('JobPost from DB:', jobPost);
+    if (!jobPost) {
+      // Ném lỗi 404 nếu không tìm thấy
+      throw new NotFoundException('Không tìm thấy job post');
+    }
+    // Trả về job post đã parse tags (chuẩn hóa contract cho FE)
+    return this.parseTags(jobPost);
   }
 
   // Lấy tất cả job post
   async getAll(): Promise<any[]> {
-    return this.prisma.jobPost.findMany();
+    const jobs = await this.prisma.jobPost.findMany();
+    return jobs.map(this.parseTags);
   }
+
+  // Hàm parse tags từ string sang mảng (fix lỗi FE .map, chống lỗi JSON.parse)
+  private parseTags = (job: any) => {
+    if (!job) return job;
+    let tags = job.tags;
+    if (typeof tags === 'string') {
+      try {
+        // Nếu là JSON hợp lệ thì parse, nếu là chuỗi array không hợp lệ thì convert
+        if (tags.trim().startsWith('[') && tags.trim().endsWith(']')) {
+          tags = JSON.parse(tags);
+        } else {
+          // Trường hợp lưu kiểu '[seo, ads, ...]' (không có dấu ")
+          tags = tags
+            .replace(/\[|\]/g, '')
+            .split(',')
+            .map((t) => t.trim())
+            .filter((t) => t);
+        }
+      } catch {
+        // Nếu parse lỗi thì trả về mảng rỗng
+        tags = [];
+      }
+    } else if (!Array.isArray(tags)) {
+      tags = [];
+    }
+    return {
+      ...job,
+      tags,
+    };
+  };
 
   // Lấy job post theo employer
   async getByEmployer(employerId: string): Promise<any[]> {
     return this.prisma.jobPost.findMany({ where: { employerId } });
+  }
+
+  // Lấy job post theo công ty
+  async getByCompany(companyId: string): Promise<any[]> {
+    // Lấy tất cả job post thuộc companyId, parse tags
+    const jobs = await this.prisma.jobPost.findMany({ where: { companyId } });
+    return jobs.map(this.parseTags);
+  }
+
+  // Lấy job post theo ngành nghề (category)
+  async getByCategory(categoryId: string): Promise<any[]> {
+    const jobs = await this.prisma.jobPost.findMany({ where: { categoryId } });
+    return jobs.map(this.parseTags);
   }
 }

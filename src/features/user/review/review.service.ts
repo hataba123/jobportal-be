@@ -39,21 +39,29 @@ export class ReviewService implements IReviewService {
     }));
   }
 
-  // Tạo mới review
+  // Tạo mới review, kiểm tra userId hợp lệ
   async createAsync(
     userId: string,
     request: CreateReviewRequest,
   ): Promise<void> {
-    await this.prisma.review.create({
-      data: {
-        userId,
-        companyId: request.companyId,
-        rating: request.rating,
-        comment: request.comment,
-        createdAt: new Date(),
-      },
-    });
-    await this.updateCompanyRatingAsync(request.companyId);
+    try {
+      if (!userId) {
+        throw new Error('Thiếu thông tin user, vui lòng đăng nhập lại!');
+      }
+      await this.prisma.review.create({
+        data: {
+          userId,
+          companyId: request.companyId,
+          rating: request.rating,
+          comment: request.comment,
+          createdAt: new Date(),
+        },
+      });
+      await this.updateCompanyRatingAsync(request.companyId);
+    } catch (error) {
+      console.error('Error in createAsync:', error);
+      throw error;
+    }
   }
 
   // Cập nhật rating trung bình cho công ty
