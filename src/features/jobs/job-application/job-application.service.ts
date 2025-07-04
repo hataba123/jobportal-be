@@ -64,18 +64,35 @@ export class JobApplicationService implements IJobApplicationService {
     recruiterId: string,
     jobPostId: string,
   ): Promise<CandidateApplicationDto[]> {
-    const jobPost = await this.prisma.jobPost.findFirst({
-      where: { id: jobPostId, employerId: recruiterId },
+    // Log để debug
+    console.log('[DEBUG] getCandidatesForJob:', { recruiterId, jobPostId });
+    
+    // Kiểm tra job có tồn tại không trước
+    const jobExists = await this.prisma.jobPost.findUnique({
+      where: { id: jobPostId },
     });
-    if (!jobPost)
+    console.log('[DEBUG] Job exists:', jobExists ? 'YES' : 'NO');
+    
+    if (!jobExists) {
+      // Trả về mảng rỗng thay vì throw error để FE dễ xử lý
+      console.log('[DEBUG] Job not found, returning empty array');
+      return [];
+    }
+    
+    if (jobExists.employerId !== recruiterId) {
       throw new NotFoundException(
-        'Không tìm thấy công việc hoặc bạn không có quyền.',
+        'Bạn không có quyền xem ứng viên của công việc này.',
       );
+    }
 
+    // Lấy danh sách ứng viên ứng tuyển
     const applications = await this.prisma.job.findMany({
       where: { jobPostId },
       include: { candidate: true },
     });
+    
+    console.log('[DEBUG] Found applications:', applications.length);
+    
     return applications.map((a) => ({
       id: a.id,
       candidateId: a.candidateId,

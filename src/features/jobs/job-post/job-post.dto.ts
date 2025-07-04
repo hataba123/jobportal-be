@@ -7,6 +7,7 @@ import {
   IsDateString,
   IsNumber,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export enum JobType {
   FULL_TIME = 'FULL_TIME',
@@ -31,6 +32,13 @@ export class CreateJobPostDto {
   @IsEnum(JobType)
   jobType: JobType;
 
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      const num = parseFloat(value);
+      return isNaN(num) ? value : num;
+    }
+    return value;
+  })
   @IsNumber()
   salary: number;
 
@@ -57,6 +65,13 @@ export class UpdateJobPostDto {
   @IsOptional()
   jobType?: JobType;
 
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      const num = parseFloat(value);
+      return isNaN(num) ? value : num;
+    }
+    return value;
+  })
   @IsNumber()
   @IsOptional()
   salary?: number;

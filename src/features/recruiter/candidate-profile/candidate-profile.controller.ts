@@ -59,7 +59,30 @@ export class RecruiterCandidateProfileController {
     return { message: 'Cập nhật hồ sơ thành công' };
   }
 
-  // Lấy chi tiết ứng viên theo recruiter
+  // Tìm kiếm ứng viên (phải đặt trước route có :id)
+  @Get('recruiter/search')
+  @Roles('1')
+  async searchCandidates(
+    @Req() req: Request,
+    @Query() query: CandidateSearchRequest,
+  ) {
+    const recruiterId = req.user?.['userId'];
+    if (!recruiterId)
+      throw new UnauthorizedException('Không xác thực được user');
+    return await this.candidateService.searchCandidates(recruiterId, query);
+  }
+
+  // Lấy danh sách ứng viên đã ứng tuyển vào job của recruiter (phải đặt trước route có :id)
+  @Get('recruiter/applied')
+  @Roles('1')
+  async getCandidatesAppliedToMyJobs(@Req() req: Request) {
+    const recruiterId = req.user?.['userId'];
+    if (!recruiterId)
+      throw new UnauthorizedException('Không xác thực được user');
+    return await this.candidateService.getCandidatesForRecruiter(recruiterId);
+  }
+
+  // Lấy chi tiết ứng viên theo recruiter (route có :id phải đặt cuối)
   @Get('recruiter/:id')
   @Roles('1')
   async getCandidateById(@Req() req: Request, @Param('id') id: string) {
@@ -74,7 +97,7 @@ export class RecruiterCandidateProfileController {
     return result;
   }
 
-  // Lấy danh sách đơn ứng tuyển của ứng viên
+  // Lấy danh sách đơn ứng tuyển của ứng viên (route có :id phải đặt cuối)
   @Get('recruiter/:id/applications')
   @Roles('1')
   async getCandidateApplications(@Req() req: Request, @Param('id') id: string) {
@@ -85,29 +108,6 @@ export class RecruiterCandidateProfileController {
       recruiterId,
       id,
     );
-  }
-
-  // Tìm kiếm ứng viên
-  @Get('recruiter/search')
-  @Roles('1')
-  async searchCandidates(
-    @Req() req: Request,
-    @Query() query: CandidateSearchRequest,
-  ) {
-    const recruiterId = req.user?.['userId'];
-    if (!recruiterId)
-      throw new UnauthorizedException('Không xác thực được user');
-    return await this.candidateService.searchCandidates(recruiterId, query);
-  }
-
-  // Lấy danh sách ứng viên đã ứng tuyển vào job của recruiter
-  @Get('recruiter/applied')
-  @Roles('1')
-  async getCandidatesAppliedToMyJobs(@Req() req: Request) {
-    const recruiterId = req.user?.['userId'];
-    if (!recruiterId)
-      throw new UnauthorizedException('Không xác thực được user');
-    return await this.candidateService.getCandidatesForRecruiter(recruiterId);
   }
 
   // Upload CV cho ứng viên (self) - Fastify multipart
