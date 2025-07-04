@@ -19,7 +19,7 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 import { Roles } from 'src/common/decorators/roles.decorator';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('Admin')
+@Roles('0')
 @Controller('api/admin/notifications')
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}

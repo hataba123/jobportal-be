@@ -19,7 +19,7 @@ import { Roles } from 'src/common/decorators/roles.decorator';
 
 // Controller cho recruiter thao tác công ty của mình
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('Recruiter')
+@Roles('1')
 @Controller('api/recruiter/company')
 export class RecruiterCompanyController {
   constructor(private readonly companyService: RecruiterCompanyService) {}

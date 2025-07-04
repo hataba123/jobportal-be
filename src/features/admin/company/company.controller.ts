@@ -20,7 +20,7 @@ import { Roles } from 'src/common/decorators/roles.decorator';
 
 // Controller quản lý công ty cho admin
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('Admin')
+@Roles('0')
 @Controller('api/admin/companies')
 export class CompanyController {
   // Inject service xử lý nghiệp vụ

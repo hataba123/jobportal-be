@@ -36,7 +36,7 @@ export class RecruiterCandidateProfileController {
 
   // Lấy profile ứng viên (self)
   @Get('me')
-  @Roles(UserRoleEnum.Candidate.toString())
+  @Roles('2')
   async getProfile(@Req() req: Request) {
     const userId = req.user?.['userId'];
     if (!userId) throw new UnauthorizedException('Không xác thực được user');
@@ -47,7 +47,7 @@ export class RecruiterCandidateProfileController {
 
   // Cập nhật profile ứng viên (self)
   @Put('me')
-  @Roles(UserRoleEnum.Candidate.toString())
+  @Roles('2')
   async updateProfile(
     @Req() req: Request,
     @Body() dto: CandidateProfileUpdateDto,
@@ -61,7 +61,7 @@ export class RecruiterCandidateProfileController {
 
   // Lấy chi tiết ứng viên theo recruiter
   @Get('recruiter/:id')
-  @Roles('Recruiter')
+  @Roles('1')
   async getCandidateById(@Req() req: Request, @Param('id') id: string) {
     const recruiterId = req.user?.['userId'];
     if (!recruiterId)
@@ -76,7 +76,7 @@ export class RecruiterCandidateProfileController {
 
   // Lấy danh sách đơn ứng tuyển của ứng viên
   @Get('recruiter/:id/applications')
-  @Roles('Recruiter')
+  @Roles('1')
   async getCandidateApplications(@Req() req: Request, @Param('id') id: string) {
     const recruiterId = req.user?.['userId'];
     if (!recruiterId)
@@ -89,7 +89,7 @@ export class RecruiterCandidateProfileController {
 
   // Tìm kiếm ứng viên
   @Get('recruiter/search')
-  @Roles('Recruiter')
+  @Roles('1')
   async searchCandidates(
     @Req() req: Request,
     @Query() query: CandidateSearchRequest,
@@ -102,7 +102,7 @@ export class RecruiterCandidateProfileController {
 
   // Lấy danh sách ứng viên đã ứng tuyển vào job của recruiter
   @Get('recruiter/applied')
-  @Roles('Recruiter')
+  @Roles('1')
   async getCandidatesAppliedToMyJobs(@Req() req: Request) {
     const recruiterId = req.user?.['userId'];
     if (!recruiterId)
@@ -113,7 +113,7 @@ export class RecruiterCandidateProfileController {
   // Upload CV cho ứng viên (self) - Fastify multipart
   // Viết lại CHUẨN Fastify: lấy file từ req.parts(), log chi tiết lỗi để debug
   @Post('me/upload-cv')
-  @Roles(UserRoleEnum.Candidate.toString())
+  @Roles('2')
   async uploadCv(@Req() req: any) {
     // Lấy userId từ request (Fastify)
     const userId = req.user?.['userId'];
@@ -165,7 +165,7 @@ export class RecruiterCandidateProfileController {
 
   // Xóa CV ứng viên (self)
   @Delete('me/delete-cv')
-  @Roles(UserRoleEnum.Candidate.toString())
+  @Roles('2')
   async deleteCv(@Req() req: Request) {
     const userId = req.user?.['userId'];
     if (!userId) throw new UnauthorizedException('Không xác thực được user');

@@ -46,10 +46,8 @@ export class CompanyDto {
   @IsOptional()
   @MaxLength(10)
   founded?: string;
-  @IsString()
-  @IsOptional()
-  @MaxLength(500)
-  tags?: string;
+  // Trả về tags là mảng string cho FE dễ xử lý
+  tags?: string[];
 }
 
 // DTO tạo mới công ty
@@ -96,11 +94,15 @@ export class CreateCompanyDto {
 }
 
 // DTO cập nhật công ty
+// DTO cập nhật công ty, không cho phép FE gửi lên trường id
 export class UpdateCompanyDto {
   @IsString()
   @IsOptional()
   @MaxLength(200)
   name?: string;
+
+  // Không cho phép FE gửi lên trường id khi update
+  // Nếu FE gửi lên sẽ bị ValidationPipe loại bỏ hoặc báo lỗi
   @IsString()
   @IsOptional()
   @MaxLength(300)
@@ -135,8 +137,7 @@ export class UpdateCompanyDto {
   @IsOptional()
   @MaxLength(10)
   founded?: string;
-  @IsString()
+  // Cho phép tags là string hoặc string[] để FE gửi lên dạng mảng đều hợp lệ
   @IsOptional()
-  @MaxLength(500)
-  tags?: string;
+  tags?: string | string[];
 }

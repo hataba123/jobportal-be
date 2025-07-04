@@ -7,6 +7,7 @@ import {
   IsOptional,
   MinLength,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export enum UserRole {
   Admin = 'Admin',
@@ -52,7 +53,14 @@ export class UpdateUserDto {
   @IsOptional()
   fullName?: string;
 
+  @Transform(({ value }) => {
+    if (typeof value === 'number') {
+      if (value === 0) return UserRole.Admin;
+      if (value === 1) return UserRole.Recruiter;
+      if (value === 2) return UserRole.Candidate;
+    }
+    return value;
+  })
   @IsEnum(UserRole)
-  @IsOptional()
-  role?: UserRole;
+  role: UserRole;
 }

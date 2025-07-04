@@ -29,7 +29,18 @@ export class CompanyService implements ICompanyService {
     return this.toDto(c);
   }
   // Hàm chuyển entity sang DTO, ép null về undefined cho các trường nullable
+  // Chuyển entity sang DTO, ép null về undefined, chuẩn hóa tags thành mảng string nếu có
   private toDto(entity: any): CompanyDto {
+    let tags: string[] = [];
+    if (Array.isArray(entity.tags)) {
+      tags = entity.tags;
+    } else if (typeof entity.tags === 'string') {
+      // Nếu tags là chuỗi, tách theo dấu phẩy
+      tags = entity.tags
+        .split(',')
+        .map((t: string) => t.trim())
+        .filter(Boolean);
+    }
     return {
       id: entity.id,
       name: entity.name,
@@ -42,15 +53,21 @@ export class CompanyService implements ICompanyService {
       rating: entity.rating,
       website: entity.website ?? undefined,
       founded: entity.founded ?? undefined,
-      tags: entity.tags ?? undefined,
+      tags,
     };
   }
 
   // Cập nhật công ty
+  // Cập nhật công ty, chuẩn hóa tags về string nếu FE gửi lên là mảng
   async updateCompany(id: string, dto: UpdateCompanyDto): Promise<boolean> {
     const c = await this.prisma.company.findUnique({ where: { id } });
     if (!c) return false;
-    await this.prisma.company.update({ where: { id }, data: dto });
+    // Nếu FE gửi tags là mảng, convert về string trước khi update
+    let data: any = { ...dto };
+    if (Array.isArray(dto.tags)) {
+      data.tags = dto.tags.join(',');
+    }
+    await this.prisma.company.update({ where: { id }, data });
     return true;
   }
 

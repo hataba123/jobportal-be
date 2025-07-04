@@ -128,7 +128,10 @@ export class AuthController {
         // Đăng ký mới với role mặc định là Candidate
         const registerDto = new RegisterRequestDto();
         registerDto.email = request.email;
-        registerDto.fullName = request.name;
+        // Xử lý chuẩn hóa tên: loại bỏ ký tự lạ, chuẩn hóa Unicode NFC
+        registerDto.fullName = request.name
+          ? request.name.normalize('NFC').replace(/[^\p{L}\p{M}\s'.-]/gu, '')
+          : '';
         registerDto.password = Math.random().toString(36).slice(-8);
         registerDto.role = 'Candidate';
         token = await this.authService.registerAsync(registerDto);

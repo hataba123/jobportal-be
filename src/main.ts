@@ -44,7 +44,10 @@ async function bootstrap() {
 
   // Sử dụng ValidationPipe cho toàn app
   app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: false, // Tự động loại bỏ field không khai báo trong DTO, không báo lỗi
+    }),
   );
 
   // Cấu hình Swagger cho Fastify
