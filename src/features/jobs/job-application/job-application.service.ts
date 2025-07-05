@@ -4,6 +4,7 @@
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { FileUtil } from '../../../common/utils/file.util';
 import { IJobApplicationService } from './job-application.iservice';
 import {
   JobApplicationRequest,
@@ -20,7 +21,6 @@ export class JobApplicationService implements IJobApplicationService {
   constructor(private readonly prisma: PrismaService) {}
 
   // Ứng viên ứng tuyển vào job
-  // Kiểm tra đầu vào, đảm bảo candidateId không undefined, tránh lỗi Prisma
   async applyToJob(
     candidateId: string,
     request: JobApplicationRequest,
@@ -30,6 +30,7 @@ export class JobApplicationService implements IJobApplicationService {
       // Nếu không xác thực được user, trả về lỗi rõ ràng
       throw new BadRequestException('Không xác thực được user ứng tuyển.');
     }
+
     // Tìm job post theo id
     const jobPost = await this.prisma.jobPost.findUnique({
       where: { id: request.jobPostId },
@@ -43,10 +44,32 @@ export class JobApplicationService implements IJobApplicationService {
     if (!candidateProfile)
       throw new NotFoundException('Hồ sơ ứng viên chưa tồn tại.');
 
-    // Lấy url CV từ request hoặc profile
+    // Sử dụng FileUtil để validate CV nếu có
     let cvUrl = request.cvUrl ?? candidateProfile.resumeUrl ?? undefined;
     if (!cvUrl)
       throw new BadRequestException('Bạn cần tải lên CV trước khi ứng tuyển.');
+
+    // Kiểm tra file CV có hợp lệ không (nếu có đường dẫn file local)
+    if (cvUrl && cvUrl.startsWith('/uploads/')) {
+      const filePath = require('path').join(
+        process.cwd(),
+        'wwwroot',
+        cvUrl.replace(/^\//, ''),
+      );
+      if (!require('fs').existsSync(filePath)) {
+        throw new BadRequestException(
+          'File CV không tồn tại, vui lòng tải lên lại.',
+        );
+      }
+    }
+
+    // Kiểm tra duplicate application
+    const existingApplication = await this.prisma.job.findFirst({
+      where: { candidateId, jobPostId: request.jobPostId },
+    });
+    if (existingApplication) {
+      throw new BadRequestException('Bạn đã ứng tuyển vào công việc này rồi.');
+    }
 
     await this.prisma.job.create({
       data: {
@@ -66,19 +89,19 @@ export class JobApplicationService implements IJobApplicationService {
   ): Promise<CandidateApplicationDto[]> {
     // Log để debug
     console.log('[DEBUG] getCandidatesForJob:', { recruiterId, jobPostId });
-    
+
     // Kiểm tra job có tồn tại không trước
     const jobExists = await this.prisma.jobPost.findUnique({
       where: { id: jobPostId },
     });
     console.log('[DEBUG] Job exists:', jobExists ? 'YES' : 'NO');
-    
+
     if (!jobExists) {
       // Trả về mảng rỗng thay vì throw error để FE dễ xử lý
       console.log('[DEBUG] Job not found, returning empty array');
       return [];
     }
-    
+
     if (jobExists.employerId !== recruiterId) {
       throw new NotFoundException(
         'Bạn không có quyền xem ứng viên của công việc này.',
@@ -90,9 +113,9 @@ export class JobApplicationService implements IJobApplicationService {
       where: { jobPostId },
       include: { candidate: true },
     });
-    
+
     console.log('[DEBUG] Found applications:', applications.length);
-    
+
     return applications.map((a) => ({
       id: a.id,
       candidateId: a.candidateId,

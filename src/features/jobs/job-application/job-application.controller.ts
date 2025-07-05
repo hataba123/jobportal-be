@@ -12,7 +12,12 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
-import { Roles } from '../../../common/decorators/roles.decorator';
+import {
+  CandidateOnly,
+  RecruiterOnly,
+  AdminOnly,
+  AdminAndRecruiter,
+} from '../../../common/decorators/roles.decorator';
 import { JobApplicationService } from './job-application.service';
 import {
   JobApplicationRequest,
@@ -26,8 +31,7 @@ export class JobApplicationController {
   constructor(private readonly jobApplicationService: JobApplicationService) {}
 
   // Ứng viên ứng tuyển vào job
-  // Bắt buộc xác thực JWT, log user để debug lỗi xác thực
-  @Roles('2') // Chỉ candidate
+  @CandidateOnly()
   @Post()
   async applyToJob(@Req() req, @Body() request: JobApplicationRequest) {
     console.log('[DEBUG][applyToJob] req.user:', req.user);
@@ -37,7 +41,7 @@ export class JobApplicationController {
   }
 
   // Nhà tuyển dụng xem danh sách ứng viên ứng tuyển vào job
-  @Roles('1') // Chỉ recruiter
+  @RecruiterOnly()
   @Get('job/:jobPostId/candidates')
   async getCandidatesForJob(@Req() req, @Param('jobPostId') jobPostId: string) {
     const recruiterId = req.user?.userId;
@@ -48,7 +52,7 @@ export class JobApplicationController {
   }
 
   // Ứng viên xem các job đã ứng tuyển
-  @Roles('2') // Chỉ candidate
+  @CandidateOnly()
   @Get('my-jobs')
   async getMyAppliedJobs(@Req() req) {
     const candidateId = req.user?.userId;
@@ -56,14 +60,14 @@ export class JobApplicationController {
   }
 
   // Admin: lấy tất cả record ứng tuyển
-  @Roles('0') // Chỉ admin
+  @AdminOnly()
   @Get()
   async getAll() {
     return this.jobApplicationService.getAll();
   }
 
-  // Admin/Recruiter: cập nhật trạng thái ứng tuyển (PATCH)
-  @Roles('0', '1') // Admin và Recruiter
+  // Admin/Recruiter: cập nhật trạng thái ứng tuyển
+  @AdminAndRecruiter()
   @Patch(':id/status')
   async updateStatusPatch(
     @Param('id') id: string,
@@ -73,8 +77,8 @@ export class JobApplicationController {
     return { message: 'Cập nhật trạng thái thành công' };
   }
 
-  // Admin/Recruiter: cập nhật trạng thái ứng tuyển (PUT)
-  @Roles('0', '1') // Admin và Recruiter
+  // Admin/Recruiter: cập nhật trạng thái ứng tuyển
+  @AdminAndRecruiter()
   @Put(':id/status')
   async updateStatusPut(
     @Param('id') id: string,
@@ -84,8 +88,8 @@ export class JobApplicationController {
     return { message: 'Cập nhật trạng thái thành công' };
   }
 
-  // Admin: xóa record ứng tuyển, bắt log lỗi
-  @Roles('0') // Chỉ admin
+  // Admin: xóa record ứng tuyển
+  @AdminOnly()
   @Delete(':id')
   async delete(@Param('id') id: string) {
     try {
@@ -102,7 +106,7 @@ export class JobApplicationController {
   }
 
   // Admin/Candidate: lấy chi tiết 1 record ứng tuyển
-  @Roles('0', '2') // Admin và Candidate
+  @AdminAndRecruiter()
   @Get(':id')
   async getById(@Param('id') id: string) {
     return this.jobApplicationService.getById(id);

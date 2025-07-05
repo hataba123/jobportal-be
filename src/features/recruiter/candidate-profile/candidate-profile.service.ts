@@ -1,6 +1,8 @@
 ﻿// Service xử lý logic Candidate Profile cho recruiter/candidate
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { FileUtil } from '../../../common/utils/file.util';
+import { APP_CONSTANTS } from '../../../common/constants/app.constants';
 import {
   CandidateProfileBriefDto,
   CandidateProfileDetailDto,
@@ -207,48 +209,60 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
     }
   }
 
-  // Upload CV cho ứng viên
-  // Upload CV cho ứng viên
+  // Upload CV cho ứng viên với validation chuẩn
   async uploadCv(userId: string, file: any): Promise<string | null> {
     if (!file || !file.originalname) return null;
-    const fileName = `${userId}_${Date.now()}_${file.originalname}`;
+
+    // Sử dụng FileUtil để validate file
+    FileUtil.validateCvFile(file.originalname, file.buffer.length);
+
+    // Tạo tên file unique
+    const fileName = FileUtil.generateUniqueFileName(file.originalname);
     const uploadPath = require('path').join(
       process.cwd(),
       'wwwroot',
-      'uploads',
-      'cv',
+      APP_CONSTANTS.UPLOAD_PATHS.CV,
     );
-    require('fs').mkdirSync(uploadPath, { recursive: true });
+
+    // Đảm bảo thư mục tồn tại
+    FileUtil.ensureDirectoryExists(uploadPath);
+
     const filePath = require('path').join(uploadPath, fileName);
     require('fs').writeFileSync(filePath, file.buffer);
-    const url = `/uploads/cv/${fileName}`;
+
+    const url = `/${APP_CONSTANTS.UPLOAD_PATHS.CV}/${fileName}`;
+
+    // Cập nhật database
     await this.prisma.candidateProfile.update({
       where: { userId },
       data: { resumeUrl: url },
     });
+
     return url;
   }
 
-  // Xóa CV ứng viên
-  // Xóa CV ứng viên
+  // Xóa CV ứng viên với FileUtil
   async deleteCv(userId: string): Promise<boolean> {
     try {
       const profile = await this.prisma.candidateProfile.findUnique({
         where: { userId },
       });
       if (!profile || !profile.resumeUrl) return false;
+
       const filePath = require('path').join(
         process.cwd(),
         'wwwroot',
         profile.resumeUrl.replace(/^\//, ''),
       );
-      if (require('fs').existsSync(filePath)) {
-        require('fs').unlinkSync(filePath);
-      }
+
+      // Sử dụng FileUtil để xóa file
+      FileUtil.deleteFileIfExists(filePath);
+
       await this.prisma.candidateProfile.update({
         where: { userId },
         data: { resumeUrl: null },
       });
+
       return true;
     } catch {
       return false;

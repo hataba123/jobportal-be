@@ -8,7 +8,8 @@ import {
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-export interface Response<T> {
+// Interface cho response chuẩn hóa
+export interface StandardResponse<T> {
   success: boolean;
   data: T;
   message?: string;
@@ -17,18 +18,27 @@ export interface Response<T> {
 
 @Injectable()
 export class ResponseInterceptor<T>
-  implements NestInterceptor<T, Response<T>>
+  implements NestInterceptor<T, StandardResponse<T>>
 {
+  // Chuẩn hóa response format cho tất cả API
   intercept(
     context: ExecutionContext,
     next: CallHandler,
-  ): Observable<Response<T>> {
+  ): Observable<StandardResponse<T>> {
     return next.handle().pipe(
-      map((data) => ({
-        success: true,
-        data,
-        timestamp: new Date().toISOString(),
-      })),
+      map((data) => {
+        // Nếu response đã có structure success/data thì giữ nguyên
+        if (data && typeof data === 'object' && 'success' in data) {
+          return data as StandardResponse<T>;
+        }
+
+        // Nếu chưa có thì wrap lại theo chuẩn
+        return {
+          success: true,
+          data,
+          timestamp: new Date().toISOString(),
+        };
+      }),
     );
   }
 }
