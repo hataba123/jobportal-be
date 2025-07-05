@@ -2,11 +2,10 @@
 import { Module } from '@nestjs/common';
 import { JobPostController } from './job-post.controller';
 import { JobPostService } from './job-post.service';
-import { PrismaService } from 'src/prisma/prisma.service';
 
 @Module({
   controllers: [JobPostController],
-  providers: [JobPostService, PrismaService],
+  providers: [JobPostService],
   exports: [JobPostService],
 })
 export class JobPostModule {}
