@@ -1,4 +1,4 @@
-import {
+﻿import {
   Controller,
   Get,
   Post,
@@ -13,10 +13,10 @@ import {
 import { JobPostService } from './job-post.service';
 import { CreateJobPostDto, UpdateJobPostDto } from './job-post.dto';
 import { ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/common/guards/roles.guard';
-import { Roles } from 'src/common/decorators/roles.decorator';
-import { UserRoleEnum } from 'src/features/auth/auth.dto';
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../common/guards/roles.guard';
+import { Roles } from '../../../common/decorators/roles.decorator';
+import { UserRoleEnum } from '../../../features/auth/auth.dto';
 
 // Controller quản lý job post
 @ApiTags('JobPost')

@@ -1,7 +1,7 @@
-// Unit test cho CategoryService
+﻿// Unit test cho CategoryService
 import { Test, TestingModule } from '@nestjs/testing';
 import { CategoryService } from './category.service';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 
 describe('CategoryService', () => {
   let service: CategoryService;

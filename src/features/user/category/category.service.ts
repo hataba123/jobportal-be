@@ -1,6 +1,6 @@
-// Service xử lý danh mục ngành nghề cho user
+﻿// Service xử lý danh mục ngành nghề cho user
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { CategoryDto } from './category.dto';
 import { ICategoryService } from './category.iservice';
 

@@ -1,6 +1,6 @@
-// Service xử lý logic công ty cho recruiter
+﻿// Service xử lý logic công ty cho recruiter
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { RecruiterCompanyDto, RecruiterUpdateCompanyDto } from './company.dto';
 import { IRecruiterCompanyService } from './company.iservice';
 

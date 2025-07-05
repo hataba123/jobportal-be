@@ -1,4 +1,4 @@
-// Controller xử lý xác thực (auth) cho user
+﻿// Controller xử lý xác thực (auth) cho user
 import {
   Controller,
   Post,
@@ -18,7 +18,7 @@ import {
   UserDto,
   UserRoleStringToIndex,
 } from './auth.dto';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('Auth')

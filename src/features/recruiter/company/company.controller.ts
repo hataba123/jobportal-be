@@ -1,4 +1,4 @@
-// Controller quản lý công ty cho recruiter
+﻿// Controller quản lý công ty cho recruiter
 import {
   Controller,
   Get,
@@ -13,9 +13,9 @@ import {
 } from '@nestjs/common';
 import { RecruiterCompanyService } from './company.service';
 import { RecruiterUpdateCompanyDto, RecruiterCompanyDto } from './company.dto';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/common/guards/roles.guard';
-import { Roles } from 'src/common/decorators/roles.decorator';
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../common/guards/roles.guard';
+import { Roles } from '../../../common/decorators/roles.decorator';
 
 // Controller cho recruiter thao tác công ty của mình
 @UseGuards(JwtAuthGuard, RolesGuard)

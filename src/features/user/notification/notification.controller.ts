@@ -1,4 +1,4 @@
-// Controller quản lý thông báo cho user
+﻿// Controller quản lý thông báo cho user
 import {
   Controller,
   Get,
@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()

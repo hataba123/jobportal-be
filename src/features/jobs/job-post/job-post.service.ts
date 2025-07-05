@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateJobPostDto, UpdateJobPostDto } from './job-post.dto';
 import { IJobPostService } from './job-post.iservice';
 

@@ -1,7 +1,7 @@
-// Unit test cho RecruiterDashboardService
+﻿// Unit test cho RecruiterDashboardService
 import { Test, TestingModule } from '@nestjs/testing';
 import { RecruiterDashboardService } from './dashboard.service';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 
 describe('RecruiterDashboardService', () => {
   let service: RecruiterDashboardService;

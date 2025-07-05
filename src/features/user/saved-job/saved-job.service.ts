@@ -1,6 +1,6 @@
-// Service xử lý saved job cho user
+﻿// Service xử lý saved job cho user
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { SavedJobDto } from './saved-job.dto';
 import { ISavedJobService } from './saved-job.iservice';
 

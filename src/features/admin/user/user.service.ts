@@ -1,6 +1,6 @@
-// Service xử lý logic user cho admin
+﻿// Service xử lý logic user cho admin
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { UserDto, CreateUserDto, UpdateUserDto, UserRole } from './user.dto';
 import { IUserService } from './user.iservice';
 import * as bcrypt from 'bcryptjs';

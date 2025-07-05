@@ -1,6 +1,6 @@
-// Service xử lý logic Candidate Profile cho recruiter/candidate
+﻿// Service xử lý logic Candidate Profile cho recruiter/candidate
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import {
   CandidateProfileBriefDto,
   CandidateProfileDetailDto,

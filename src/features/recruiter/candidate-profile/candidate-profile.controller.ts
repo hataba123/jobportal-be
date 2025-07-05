@@ -1,4 +1,4 @@
-// Controller quản lý Candidate Profile cho recruiter/candidate
+﻿// Controller quản lý Candidate Profile cho recruiter/candidate
 import {
   Controller,
   Get,
@@ -22,10 +22,10 @@ import {
   CandidateProfileUpdateDto,
   CandidateSearchRequest,
 } from './candidate-profile.dto';
-import { UserRoleEnum } from 'src/features/auth/auth.dto';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/common/guards/roles.guard';
-import { Roles } from 'src/common/decorators/roles.decorator';
+import { UserRoleEnum } from '../../../features/auth/auth.dto';
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../common/guards/roles.guard';
+import { Roles } from '../../../common/decorators/roles.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
 

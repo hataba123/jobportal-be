@@ -1,4 +1,4 @@
-// Hàm chuyển role dạng số về enum string (Admin/Recruiter/Candidate)
+﻿// Hàm chuyển role dạng số về enum string (Admin/Recruiter/Candidate)
 function userRoleNumberToString(role: number): UserRole {
   if (role === UserRoleEnum.Admin) return UserRole.Admin;
   if (role === UserRoleEnum.Recruiter) return UserRole.Recruiter;
@@ -29,10 +29,10 @@ import { UserRole } from './user.dto';
 import {
   UserRoleEnum,
   UserRoleStringToIndex,
-} from 'src/features/auth/auth.dto';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/common/guards/roles.guard';
-import { Roles } from 'src/common/decorators/roles.decorator';
+} from '../../../features/auth/auth.dto';
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../common/guards/roles.guard';
+import { Roles } from '../../../common/decorators/roles.decorator';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('0')

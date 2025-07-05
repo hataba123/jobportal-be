@@ -1,6 +1,6 @@
-// Service xử lý logic job post cho admin
+﻿// Service xử lý logic job post cho admin
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { JobPostDto, CreateJobPostDto, UpdateJobPostDto } from './job-post.dto';
 import { IJobPostService } from './job-post.iservice';
 

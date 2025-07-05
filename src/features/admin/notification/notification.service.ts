@@ -1,6 +1,6 @@
-// Service xử lý logic notification cho admin
+﻿// Service xử lý logic notification cho admin
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { NotificationDto, CreateNotificationDto } from './notification.dto';
 import { INotificationService } from './notification.iservice';
 

@@ -1,6 +1,6 @@
-// Service xử lý logic thống kê dashboard cho admin
+﻿// Service xử lý logic thống kê dashboard cho admin
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { DashboardDto } from './dashboard.dto';
 import { IDashboardService } from './dashboard.iservice';
 

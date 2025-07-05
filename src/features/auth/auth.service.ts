@@ -1,6 +1,6 @@
-// Service xử lý xác thực (auth) cho user
+﻿// Service xử lý xác thực (auth) cho user
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import {
   RegisterRequestDto,
   LoginRequestDto,

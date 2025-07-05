@@ -1,6 +1,6 @@
-// Service xử lý thông báo cho user (dùng lại logic từ admin)
+﻿// Service xử lý thông báo cho user (dùng lại logic từ admin)
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import {
   NotificationDto,
   CreateNotificationDto,

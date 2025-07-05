@@ -1,6 +1,6 @@
-// Service xử lý review cho user
+﻿// Service xử lý review cho user
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { ReviewDto, CreateReviewRequest } from './review.dto';
 import { IReviewService } from './review.iservice';
 

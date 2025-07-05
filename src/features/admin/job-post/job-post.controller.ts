@@ -1,4 +1,4 @@
-// Controller quản lý job post cho admin
+﻿// Controller quản lý job post cho admin
 import {
   Controller,
   Get,
@@ -14,9 +14,9 @@ import {
 } from '@nestjs/common';
 import { JobPostService } from './job-post.service';
 import { CreateJobPostDto, UpdateJobPostDto } from './job-post.dto';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/common/guards/roles.guard';
-import { Roles } from 'src/common/decorators/roles.decorator';
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../common/guards/roles.guard';
+import { Roles } from '../../../common/decorators/roles.decorator';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('0')

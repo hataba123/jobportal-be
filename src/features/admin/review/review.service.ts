@@ -1,6 +1,6 @@
-// Service xử lý logic review cho admin
+﻿// Service xử lý logic review cho admin
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 import { ReviewDto, UpdateReviewDto } from './review.dto';
 import { IReviewService } from './review.iservice';
 

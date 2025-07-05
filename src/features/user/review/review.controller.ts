@@ -1,4 +1,4 @@
-// Controller quản lý review cho user
+﻿// Controller quản lý review cho user
 import {
   Controller,
   Get,
@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { CreateReviewRequest } from './review.dto';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('Reviews')
