@@ -13,35 +13,37 @@ import { Request, Response } from 'express';
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
 
-  catch(exception: unknown, host: ArgumentsHost) {
+  catch(exception: any, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+    const response = ctx.getResponse();
+    const request = ctx.getRequest();
 
-    let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'Internal server error';
+    // Xác định status code
+    const status =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    if (exception instanceof HttpException) {
-      status = exception.getStatus();
-      const responseMessage = exception.getResponse();
-      message =
-        typeof responseMessage === 'string'
-          ? responseMessage
-          : (responseMessage as any).message || message;
-    }
-
-    // Log lỗi để debug
-    this.logger.error(
-      `${request.method} ${request.url} - ${status}: ${message}`,
-      exception instanceof Error ? exception.stack : exception,
-    );
-
-    response.status(status).json({
-      success: false,
+    // Chuẩn hóa body trả về
+    const body = {
       statusCode: status,
-      message,
       timestamp: new Date().toISOString(),
       path: request.url,
-    });
+      message: exception.message || 'Internal server error',
+      error: exception.name || undefined,
+      // Nếu có lỗi chi tiết từ class-validator
+      errors: exception.response?.errors || undefined,
+    };
+
+    // Nếu là Fastify reply (có hàm .send), dùng reply.status().send()
+    if (typeof response.send === 'function') {
+      response.status(status).send(body);
+    } else if (typeof response.json === 'function') {
+      // Nếu là Express response, dùng .status().json()
+      response.status(status).json(body);
+    } else {
+      // Fallback: trả về trực tiếp
+      response.end(JSON.stringify(body));
+    }
   }
 }
