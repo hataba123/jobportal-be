@@ -26,6 +26,15 @@ export class JobPostService implements IJobPostService {
       throw new BadRequestException('Danh mục công việc không tồn tại.');
     }
 
+    // Tin do recruiter tạo không được tự chuyển sang Active. Admin sẽ duyệt
+    // và chuyển trạng thái sau khi kiểm tra nội dung/công ty.
+    const requestedStatus = dto.status ?? 'PendingApproval';
+    if (!['Draft', 'PendingApproval'].includes(requestedStatus)) {
+      throw new BadRequestException(
+        'Recruiter chỉ được tạo tin ở trạng thái Draft hoặc PendingApproval.',
+      );
+    }
+
     return this.prisma.jobPost.create({
       data: {
         title: dto.title,
@@ -39,7 +48,7 @@ export class JobPostService implements IJobPostService {
         categoryId: dto.categoryId,
         logo: dto.logo,
         expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
-        status: dto.status ?? 'Active',
+        status: requestedStatus,
         minExperienceYears: dto.minExperienceYears,
         educationRequirement: dto.educationRequirement,
         employerId,
