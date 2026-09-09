@@ -20,6 +20,13 @@ describe('SavedJobService', () => {
               create: jest.fn().mockResolvedValue({}),
               delete: jest.fn().mockResolvedValue({}),
             },
+            jobPost: {
+              findFirst: jest.fn().mockResolvedValue({
+                id: '2',
+                status: 'Active',
+                expiresAt: null,
+              }),
+            },
           },
         },
       ],

@@ -15,7 +15,7 @@ import {
   CandidateApplicationDto,
   JobAppliedDto,
 } from './job-application.dto';
-import { ApplyStatus } from '@prisma/client';
+import { ApplyStatus, Prisma } from '@prisma/client';
 import { NotificationService } from '../../user/notification/notification.service';
 
 // Service xử lý logic ứng tuyển việc làm
@@ -74,15 +74,25 @@ export class JobApplicationService implements IJobApplicationService {
       throw new BadRequestException('Bạn đã ứng tuyển vào công việc này rồi.');
     }
 
-    await this.prisma.job.create({
-      data: {
-        jobPostId: request.jobPostId,
-        candidateId,
-        cvUrl: cvUrl,
-        appliedAt: new Date(),
-        status: ApplyStatus.Pending,
-      },
-    });
+    try {
+      await this.prisma.job.create({
+        data: {
+          jobPostId: request.jobPostId,
+          candidateId,
+          cvUrl: cvUrl,
+          appliedAt: new Date(),
+          status: ApplyStatus.Pending,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new BadRequestException('Bạn đã ứng tuyển vào công việc này rồi.');
+      }
+      throw error;
+    }
 
     await this.notifications?.create({
       userId: jobPost.employerId,
