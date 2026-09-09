@@ -11,7 +11,7 @@ export class CompanyService implements ICompanyService {
   // Lấy tất cả công ty
   async getAllAsync(): Promise<CompanyDto[]> {
     const companies = await this.prisma.company.findMany({
-      where: { deletedAt: null },
+      where: { deletedAt: null, verificationStatus: 'Verified' },
     });
     return companies.map((c) => ({
       id: c.id,
@@ -26,13 +26,15 @@ export class CompanyService implements ICompanyService {
       website: c.website || undefined,
       founded: c.founded || undefined,
       tags: c.tags || undefined,
+      verificationStatus: c.verificationStatus,
+      verifiedAt: c.verifiedAt || undefined,
     }));
   }
 
   // Lấy công ty theo id
   async getByIdAsync(id: string): Promise<CompanyDto | null> {
     const c = await this.prisma.company.findFirst({
-      where: { id, deletedAt: null },
+      where: { id, deletedAt: null, verificationStatus: 'Verified' },
     });
     if (!c) return null;
     return {
@@ -48,6 +50,8 @@ export class CompanyService implements ICompanyService {
       website: c.website || undefined,
       founded: c.founded || undefined,
       tags: c.tags || undefined,
+      verificationStatus: c.verificationStatus,
+      verifiedAt: c.verifiedAt || undefined,
     };
   }
 }

@@ -11,9 +11,14 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Patch,
 } from '@nestjs/common';
 import { CompanyService } from './company.service';
-import { CreateCompanyDto, UpdateCompanyDto } from './company.dto';
+import {
+  CreateCompanyDto,
+  UpdateCompanyDto,
+  UpdateCompanyVerificationDto,
+} from './company.dto';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
@@ -62,5 +67,15 @@ export class CompanyController {
     const deleted = await this.companyService.deleteCompany(id);
     if (!deleted) throw new NotFoundException('Company not found');
     return;
+  }
+
+  @Patch(':id/verification')
+  async updateVerification(
+    @Param('id') id: string,
+    @Body() dto: UpdateCompanyVerificationDto,
+  ) {
+    const company = await this.companyService.updateVerificationStatus(id, dto);
+    if (!company) throw new NotFoundException('Company not found');
+    return company;
   }
 }

@@ -6,8 +6,10 @@ import {
   IsInt,
   IsNumber,
   MaxLength,
+  IsEnum,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { CompanyVerificationStatus } from '@prisma/client';
 
 // DTO trả về thông tin công ty
 // DTO trả về thông tin công ty cho recruiter
@@ -62,6 +64,9 @@ export class RecruiterCompanyDto {
 
   // Trả về tags là mảng string cho FE
   tags?: string[];
+  @IsEnum(CompanyVerificationStatus)
+  verificationStatus: CompanyVerificationStatus;
+  verifiedAt?: Date;
 }
 
 // DTO cập nhật công ty

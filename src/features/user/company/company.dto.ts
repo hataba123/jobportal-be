@@ -1,5 +1,6 @@
 // DTO cho công ty
-import { IsUUID, IsString, IsOptional, IsInt, IsNumber } from 'class-validator';
+import { IsUUID, IsString, IsOptional, IsInt, IsNumber, IsEnum } from 'class-validator';
+import { CompanyVerificationStatus } from '@prisma/client';
 
 export class CompanyDto {
   @IsUUID()
@@ -34,4 +35,7 @@ export class CompanyDto {
   @IsString()
   @IsOptional()
   tags?: string;
+  @IsEnum(CompanyVerificationStatus)
+  verificationStatus: CompanyVerificationStatus;
+  verifiedAt?: Date;
 }

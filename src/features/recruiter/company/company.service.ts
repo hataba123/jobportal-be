@@ -98,6 +98,8 @@ export class RecruiterCompanyService implements IRecruiterCompanyService {
       website: entity.website ?? undefined,
       founded: entity.founded ?? undefined,
       tags: entity.tags ?? undefined,
+      verificationStatus: entity.verificationStatus,
+      verifiedAt: entity.verifiedAt ?? undefined,
     };
   }
 }

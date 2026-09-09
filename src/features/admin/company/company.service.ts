@@ -1,7 +1,12 @@
 ﻿import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { ICompanyService } from './company.iservice';
-import { CompanyDto, CreateCompanyDto, UpdateCompanyDto } from './company.dto';
+import {
+  CompanyDto,
+  CreateCompanyDto,
+  UpdateCompanyDto,
+  UpdateCompanyVerificationDto,
+} from './company.dto';
 
 // Service xử lý logic quản lý công ty
 @Injectable()
@@ -58,6 +63,8 @@ export class CompanyService implements ICompanyService {
       website: entity.website ?? undefined,
       founded: entity.founded ?? undefined,
       tags,
+      verificationStatus: entity.verificationStatus,
+      verifiedAt: entity.verifiedAt ?? undefined,
     };
   }
 
@@ -95,5 +102,25 @@ export class CompanyService implements ICompanyService {
       }),
     ]);
     return true;
+  }
+
+  async updateVerificationStatus(
+    id: string,
+    dto: UpdateCompanyVerificationDto,
+  ): Promise<CompanyDto | null> {
+    const company = await this.prisma.company.findFirst({
+      where: { id, deletedAt: null },
+    });
+    if (!company) return null;
+
+    const updated = await this.prisma.company.update({
+      where: { id },
+      data: {
+        verificationStatus: dto.verificationStatus,
+        verifiedAt:
+          dto.verificationStatus === 'Verified' ? new Date() : null,
+      },
+    });
+    return this.toDto(updated);
   }
 }

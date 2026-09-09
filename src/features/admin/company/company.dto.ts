@@ -5,7 +5,9 @@ import {
   IsInt,
   IsNumber,
   MaxLength,
+  IsEnum,
 } from 'class-validator';
+import { CompanyVerificationStatus } from '@prisma/client';
 
 // DTO trả về thông tin công ty
 export class CompanyDto {
@@ -48,6 +50,9 @@ export class CompanyDto {
   founded?: string;
   // Trả về tags là mảng string cho FE dễ xử lý
   tags?: string[];
+  @IsEnum(CompanyVerificationStatus)
+  verificationStatus: CompanyVerificationStatus;
+  verifiedAt?: Date;
 }
 
 // DTO tạo mới công ty
@@ -140,4 +145,9 @@ export class UpdateCompanyDto {
   // Cho phép tags là string hoặc string[] để FE gửi lên dạng mảng đều hợp lệ
   @IsOptional()
   tags?: string | string[];
+}
+
+export class UpdateCompanyVerificationDto {
+  @IsEnum(CompanyVerificationStatus)
+  verificationStatus: CompanyVerificationStatus;
 }

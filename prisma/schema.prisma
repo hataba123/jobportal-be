@@ -62,6 +62,12 @@ enum JobPostStatus {
   Rejected
 }
 
+enum CompanyVerificationStatus {
+  Pending
+  Verified
+  Rejected
+}
+
 enum PaymentOrderStatus {
   Pending
   Paid
@@ -207,6 +213,8 @@ model Company {
   tags        String?   @db.VarChar(500)
   userId      String?
   deletedAt   DateTime?
+  verificationStatus CompanyVerificationStatus @default(Pending)
+  verifiedAt         DateTime?
   jobPosts    JobPost[]
   reviews     Review[]
 

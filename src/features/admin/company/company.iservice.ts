@@ -1,4 +1,9 @@
-import { CompanyDto, CreateCompanyDto, UpdateCompanyDto } from './company.dto';
+import {
+  CompanyDto,
+  CreateCompanyDto,
+  UpdateCompanyDto,
+  UpdateCompanyVerificationDto,
+} from './company.dto';
 
 // Interface service quản lý công ty
 export interface ICompanyService {
@@ -7,4 +12,8 @@ export interface ICompanyService {
   createCompany(dto: CreateCompanyDto): Promise<CompanyDto>;
   updateCompany(id: string, dto: UpdateCompanyDto): Promise<boolean>;
   deleteCompany(id: string): Promise<boolean>;
+  updateVerificationStatus(
+    id: string,
+    dto: UpdateCompanyVerificationDto,
+  ): Promise<CompanyDto | null>;
 }
