@@ -11,6 +11,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { APP_CONSTANTS } from './common/constants/app.constants';
 import { CorrelationIdInterceptor } from './common/interceptors/correlation-id.interceptor';
+import { createRateLimitHook } from './common/security/rate-limit.hook';
 
 // Enum quản lý môi trường để tránh hardcode
 enum Environment {
@@ -71,6 +72,7 @@ async function bootstrap(): Promise<void> {
         return reply.code(404).send();
       }
     });
+    fastifyInstance.addHook('onRequest', createRateLimitHook());
 
     // Đăng ký static files với Fastify (logo/hình ảnh công khai; CV đã bị chặn ở hook trên)
     await app.register(require('@fastify/static'), {
