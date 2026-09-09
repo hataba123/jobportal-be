@@ -3,6 +3,7 @@ import {
   BadRequestException,
   Injectable,
   UnauthorizedException,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
@@ -21,12 +22,14 @@ import {
   ChangePasswordRequestDto,
   ResetPasswordRequestDto,
 } from './auth.dto';
+import { EmailNotificationService } from '../../common/email/email-notification.service';
 
 @Injectable()
 export class AuthService implements IAuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    @Optional() private readonly emailNotifications?: EmailNotificationService,
   ) {}
 
   // Đăng ký tài khoản mới
@@ -292,8 +295,8 @@ export class AuthService implements IAuthService {
       }),
     ]);
 
-    // Email delivery is intentionally kept behind the notification provider.
-    // The raw token is never persisted or returned by this endpoint.
+    // Chỉ gửi token qua provider; token thô không được lưu hoặc trả về API.
+    await this.emailNotifications?.sendPasswordReset(user.email, rawToken);
   }
 
   async resetPasswordAsync(request: ResetPasswordRequestDto): Promise<void> {

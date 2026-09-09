@@ -17,6 +17,7 @@ import {
 } from './job-application.dto';
 import { ApplyStatus, Prisma } from '@prisma/client';
 import { NotificationService } from '../../user/notification/notification.service';
+import { EmailNotificationService } from '../../../common/email/email-notification.service';
 
 // Service xử lý logic ứng tuyển việc làm
 @Injectable()
@@ -24,6 +25,7 @@ export class JobApplicationService implements IJobApplicationService {
   constructor(
     private readonly prisma: PrismaService,
     @Optional() private readonly notifications?: NotificationService,
+    @Optional() private readonly emailNotifications?: EmailNotificationService,
   ) {}
 
   // Ứng viên ứng tuyển vào job
@@ -40,6 +42,7 @@ export class JobApplicationService implements IJobApplicationService {
     // Tìm job post theo id
     const jobPost = await this.prisma.jobPost.findFirst({
       where: { id: request.jobPostId, deletedAt: null },
+      include: { employer: { select: { email: true } } },
     });
     if (
       !jobPost ||
@@ -104,6 +107,18 @@ export class JobApplicationService implements IJobApplicationService {
       message: `Đã nhận hồ sơ ứng tuyển cho tin "${jobPost.title}".`,
       type: 'application_confirmation',
     });
+    if (candidateProfile.userId && candidateProfile.userId === candidateId) {
+      const candidate = await this.prisma.user.findUnique({
+        where: { id: candidateId },
+        select: { email: true },
+      });
+      if (candidate?.email) {
+        await this.emailNotifications?.sendApplicationConfirmation(
+          candidate.email,
+          jobPost.title,
+        );
+      }
+    }
   }
 
   // Nhà tuyển dụng xem danh sách ứng viên ứng tuyển vào job
@@ -210,7 +225,7 @@ export class JobApplicationService implements IJobApplicationService {
   ): Promise<boolean> {
     const application = await this.prisma.job.findUnique({
       where: { id },
-      include: { jobPost: true },
+      include: { jobPost: true, candidate: { select: { email: true } } },
     });
     if (!application) return false;
     if (
@@ -231,6 +246,13 @@ export class JobApplicationService implements IJobApplicationService {
       message: `Trạng thái hồ sơ cho tin "${application.jobPost.title}" đã chuyển thành ${status}.`,
       type: 'application_status_changed',
     });
+    if (application.candidate?.email) {
+      await this.emailNotifications?.sendApplicationStatusChanged(
+        application.candidate.email,
+        application.jobPost.title,
+        status,
+      );
+    }
     return true;
   }
 
