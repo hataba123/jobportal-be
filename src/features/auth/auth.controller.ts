@@ -129,6 +129,9 @@ export class AuthController {
     try {
       return await this.authService.oauthLoginAsync(request, exchangeSecret);
     } catch (e) {
+      if (e instanceof HttpException && e.getStatus() === HttpStatus.UNAUTHORIZED) {
+        throw e;
+      }
       throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
     }
   }
