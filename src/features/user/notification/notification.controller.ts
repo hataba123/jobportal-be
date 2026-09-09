@@ -29,12 +29,10 @@ export class NotificationController {
 
   // Xem chi tiết thông báo
   @Get(':id')
-  async getById(reqOrId: any, @Param('id') routeId?: string) {
-    const req = typeof reqOrId === 'string' ? undefined : reqOrId;
-    const id = (typeof reqOrId === 'string' ? reqOrId : routeId) as string;
+  async getById(@Req() req, @Param('id') id: string) {
     const result = await this.notificationService.getByIdAsync(
       id,
-      req?.user?.userId,
+      req.user.userId,
     );
     if (!result) throw new NotFoundException();
     return result;
@@ -42,12 +40,10 @@ export class NotificationController {
 
   // Đánh dấu là đã đọc
   @Put(':id/read')
-  async markAsRead(reqOrId: any, @Param('id') routeId?: string) {
-    const req = typeof reqOrId === 'string' ? undefined : reqOrId;
-    const id = (typeof reqOrId === 'string' ? reqOrId : routeId) as string;
+  async markAsRead(@Req() req, @Param('id') id: string) {
     const success = await this.notificationService.markAsReadAsync(
       id,
-      req?.user?.userId,
+      req.user.userId,
     );
     if (!success) throw new NotFoundException();
     return { message: 'Thông báo đã được đánh dấu là đã đọc.' };
@@ -55,12 +51,10 @@ export class NotificationController {
 
   // Xoá thông báo
   @Delete(':id')
-  async delete(reqOrId: any, @Param('id') routeId?: string) {
-    const req = typeof reqOrId === 'string' ? undefined : reqOrId;
-    const id = (typeof reqOrId === 'string' ? reqOrId : routeId) as string;
+  async delete(@Req() req, @Param('id') id: string) {
     const success = await this.notificationService.deleteAsync(
       id,
-      req?.user?.userId,
+      req.user.userId,
     );
     if (!success) throw new NotFoundException();
     return { message: 'Xoá thông báo thành công.' };

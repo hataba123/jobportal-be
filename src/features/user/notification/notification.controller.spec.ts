@@ -6,8 +6,14 @@ import { NotFoundException } from '@nestjs/common';
 describe('NotificationController', () => {
   let controller: NotificationController;
   let service: NotificationService;
+  const getByIdMock = jest.fn();
+  const markAsReadMock = jest.fn();
+  const deleteMock = jest.fn();
 
   beforeEach(async () => {
+    getByIdMock.mockReset().mockResolvedValue(null);
+    markAsReadMock.mockReset().mockResolvedValue(true);
+    deleteMock.mockReset().mockResolvedValue(true);
     const module: TestingModule = await Test.createTestingModule({
       controllers: [NotificationController],
       providers: [
@@ -15,9 +21,9 @@ describe('NotificationController', () => {
           provide: NotificationService,
           useValue: {
             getByUserIdAsync: jest.fn().mockResolvedValue([]),
-            getByIdAsync: jest.fn().mockResolvedValue(null),
-            markAsReadAsync: jest.fn().mockResolvedValue(true),
-            deleteAsync: jest.fn().mockResolvedValue(true),
+            getByIdAsync: getByIdMock,
+            markAsReadAsync: markAsReadMock,
+            deleteAsync: deleteMock,
           },
         },
       ],
@@ -37,35 +43,45 @@ describe('NotificationController', () => {
 
   // Test getById
   it('should return notification by id', async () => {
-    jest.spyOn(service, 'getByIdAsync').mockResolvedValue({ id: '1' } as any);
-    expect(await controller.getById('1')).toEqual({ id: '1' });
+    getByIdMock.mockResolvedValue({ id: '1' } as any);
+    const req = { user: { userId: 'user-1' } };
+    expect(await controller.getById(req, '1')).toEqual({ id: '1' });
+    expect(getByIdMock).toHaveBeenCalledWith('1', 'user-1');
   });
   it('should throw NotFoundException if not found', async () => {
-    jest.spyOn(service, 'getByIdAsync').mockResolvedValue(null);
-    await expect(controller.getById('1')).rejects.toThrow(NotFoundException);
+    getByIdMock.mockResolvedValue(null);
+    await expect(
+      controller.getById({ user: { userId: 'user-1' } }, '1'),
+    ).rejects.toThrow(NotFoundException);
   });
 
   // Test markAsRead
   it('should return message when mark as read', async () => {
-    jest.spyOn(service, 'markAsReadAsync').mockResolvedValue(true);
-    expect(await controller.markAsRead('1')).toEqual({
+    markAsReadMock.mockResolvedValue(true);
+    expect(await controller.markAsRead({ user: { userId: 'user-1' } }, '1')).toEqual({
       message: expect.any(String),
     });
+    expect(markAsReadMock).toHaveBeenCalledWith('1', 'user-1');
   });
   it('should throw NotFoundException if mark as read fails', async () => {
-    jest.spyOn(service, 'markAsReadAsync').mockResolvedValue(false);
-    await expect(controller.markAsRead('1')).rejects.toThrow(NotFoundException);
+    markAsReadMock.mockResolvedValue(false);
+    await expect(
+      controller.markAsRead({ user: { userId: 'user-1' } }, '1'),
+    ).rejects.toThrow(NotFoundException);
   });
 
   // Test delete
   it('should return message when delete', async () => {
-    jest.spyOn(service, 'deleteAsync').mockResolvedValue(true);
-    expect(await controller.delete('1')).toEqual({
+    deleteMock.mockResolvedValue(true);
+    expect(await controller.delete({ user: { userId: 'user-1' } }, '1')).toEqual({
       message: expect.any(String),
     });
+    expect(deleteMock).toHaveBeenCalledWith('1', 'user-1');
   });
   it('should throw NotFoundException if delete fails', async () => {
-    jest.spyOn(service, 'deleteAsync').mockResolvedValue(false);
-    await expect(controller.delete('1')).rejects.toThrow(NotFoundException);
+    deleteMock.mockResolvedValue(false);
+    await expect(
+      controller.delete({ user: { userId: 'user-1' } }, '1'),
+    ).rejects.toThrow(NotFoundException);
   });
 });
