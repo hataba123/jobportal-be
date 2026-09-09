@@ -26,6 +26,7 @@ export class JobPostService implements IJobPostService {
     const data: any = {
       ...dto,
       tags: Array.isArray(dto.tags) ? JSON.stringify(dto.tags) : dto.tags,
+      status: dto.status ?? 'Active',
     };
     const j = await this.prisma.jobPost.create({ data });
     return this.toDto(j);
@@ -36,8 +37,8 @@ export class JobPostService implements IJobPostService {
   async updateJobPost(id: string, dto: UpdateJobPostDto): Promise<boolean> {
     try {
       const data: any = {
-        ...dto,
-        tags: Array.isArray(dto.tags) ? JSON.stringify(dto.tags) : dto.tags,
+      ...dto,
+      tags: Array.isArray(dto.tags) ? JSON.stringify(dto.tags) : dto.tags,
       };
       const j = await this.prisma.jobPost.update({ where: { id }, data });
       return !!j;
@@ -77,6 +78,8 @@ export class JobPostService implements IJobPostService {
       applicants: entity.applicants,
       createdAt: entity.createdAt,
       categoryId: entity.categoryId,
+      status: entity.status,
+      expiresAt: entity.expiresAt ?? undefined,
     };
   }
 }

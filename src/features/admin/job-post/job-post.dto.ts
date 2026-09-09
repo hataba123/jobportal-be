@@ -8,7 +8,9 @@ import {
   IsArray,
   IsDate,
   IsInt,
+  IsEnum,
 } from 'class-validator';
+import { JobPostStatus } from '@prisma/client';
 
 export class JobPostDto {
   @IsUUID()
@@ -63,6 +65,13 @@ export class JobPostDto {
 
   @IsUUID()
   categoryId: string;
+
+  @IsEnum(JobPostStatus)
+  status: JobPostStatus;
+
+  @IsDate()
+  @IsOptional()
+  expiresAt?: Date;
 }
 
 export class CreateJobPostDto {
@@ -115,6 +124,14 @@ export class CreateJobPostDto {
 
   @IsUUID()
   categoryId: string;
+
+  @IsEnum(JobPostStatus)
+  @IsOptional()
+  status?: JobPostStatus;
+
+  @IsDate()
+  @IsOptional()
+  expiresAt?: Date;
 }
 
 export class UpdateJobPostDto {
@@ -175,4 +192,12 @@ export class UpdateJobPostDto {
   @IsUUID()
   @IsOptional()
   categoryId?: string;
+
+  @IsEnum(JobPostStatus)
+  @IsOptional()
+  status?: JobPostStatus;
+
+  @IsDate()
+  @IsOptional()
+  expiresAt?: Date;
 }

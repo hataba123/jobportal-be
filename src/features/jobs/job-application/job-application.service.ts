@@ -33,10 +33,16 @@ export class JobApplicationService implements IJobApplicationService {
     }
 
     // Tìm job post theo id
-    const jobPost = await this.prisma.jobPost.findUnique({
+    const jobPost = await this.prisma.jobPost.findFirst({
       where: { id: request.jobPostId },
     });
-    if (!jobPost) throw new NotFoundException('Công việc không tồn tại.');
+    if (
+      !jobPost ||
+      jobPost.status !== 'Active' ||
+      (jobPost.expiresAt && jobPost.expiresAt <= new Date())
+    ) {
+      throw new NotFoundException('Công việc không tồn tại hoặc đã hết hạn.');
+    }
 
     // Tìm candidate profile theo userId
     const candidateProfile = await this.prisma.candidateProfile.findUnique({

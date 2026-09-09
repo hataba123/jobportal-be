@@ -47,6 +47,15 @@ model User {
   passwordResetTokens PasswordResetToken[]
 }
 
+enum JobPostStatus {
+  Draft
+  PendingApproval
+  Active
+  Closed
+  Expired
+  Rejected
+}
+
 model OAuthAccount {
   id                String   @id @default(uuid())
   userId            String
@@ -210,6 +219,7 @@ model JobPost {
   applicants   Int
   createdAt    DateTime  @default(now())
   expiresAt    DateTime?
+  status       JobPostStatus @default(Active)
   categoryId   String
   category     Category  @relation(fields: [categoryId], references: [id])
   jobs         Job[]

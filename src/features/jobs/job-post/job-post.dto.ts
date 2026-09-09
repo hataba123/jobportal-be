@@ -7,8 +7,10 @@ import {
   IsString,
   IsUUID,
   MaxLength,
+  IsEnum,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { JobPostStatus } from '@prisma/client';
 
 const parseNumber = ({ value }: { value: unknown }) => {
   if (typeof value === 'string') {
@@ -67,6 +69,10 @@ export class CreateJobPostDto {
   @IsDateString()
   @IsOptional()
   expiresAt?: string;
+
+  @IsEnum(JobPostStatus)
+  @IsOptional()
+  status?: JobPostStatus;
 }
 
 export class UpdateJobPostDto {
@@ -120,4 +126,8 @@ export class UpdateJobPostDto {
   @IsDateString()
   @IsOptional()
   expiresAt?: string;
+
+  @IsEnum(JobPostStatus)
+  @IsOptional()
+  status?: JobPostStatus;
 }

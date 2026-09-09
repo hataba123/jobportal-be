@@ -39,6 +39,7 @@ export class JobPostService implements IJobPostService {
         categoryId: dto.categoryId,
         logo: dto.logo,
         expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
+        status: dto.status ?? 'Active',
         employerId,
         applicants: 0,
       },
@@ -72,6 +73,7 @@ export class JobPostService implements IJobPostService {
         categoryId: dto.categoryId,
         logo: dto.logo,
         expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : undefined,
+        status: dto.status,
       },
     });
   }
@@ -91,7 +93,13 @@ export class JobPostService implements IJobPostService {
 
   // Lấy chi tiết job post theo id, trả về 404 nếu không tìm thấy
   async getById(id: string) {
-    const jobPost = await this.prisma.jobPost.findUnique({ where: { id } });
+    const jobPost = await this.prisma.jobPost.findFirst({
+      where: {
+        id,
+        status: 'Active',
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+    });
     console.log('JobPost from DB:', jobPost);
     if (!jobPost) {
       // Ném lỗi 404 nếu không tìm thấy
@@ -103,7 +111,13 @@ export class JobPostService implements IJobPostService {
 
   // Lấy tất cả job post
   async getAll(): Promise<any[]> {
-    const jobs = await this.prisma.jobPost.findMany();
+    const jobs = await this.prisma.jobPost.findMany({
+      where: {
+        status: 'Active',
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+      orderBy: { createdAt: 'desc' },
+    });
     return jobs.map(this.parseTags);
   }
 
@@ -146,13 +160,25 @@ export class JobPostService implements IJobPostService {
   // Lấy job post theo công ty
   async getByCompany(companyId: string): Promise<any[]> {
     // Lấy tất cả job post thuộc companyId, parse tags
-    const jobs = await this.prisma.jobPost.findMany({ where: { companyId } });
+    const jobs = await this.prisma.jobPost.findMany({
+      where: {
+        companyId,
+        status: 'Active',
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+    });
     return jobs.map(this.parseTags);
   }
 
   // Lấy job post theo ngành nghề (category)
   async getByCategory(categoryId: string): Promise<any[]> {
-    const jobs = await this.prisma.jobPost.findMany({ where: { categoryId } });
+    const jobs = await this.prisma.jobPost.findMany({
+      where: {
+        categoryId,
+        status: 'Active',
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+    });
     return jobs.map(this.parseTags);
   }
 }
