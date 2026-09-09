@@ -1,6 +1,7 @@
 ﻿// Service xử lý xác thực (auth) cho user
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   UnauthorizedException,
   Optional,
@@ -39,7 +40,7 @@ export class AuthService implements IAuthService {
     const existing = await this.prisma.user.findUnique({
       where: { email: request.email },
     });
-    if (existing) return '';
+    if (existing) throw new ConflictException('Email đã được sử dụng.');
     const hash = await bcrypt.hash(request.password, 10);
     const prismaRole = this.normalizeRegistrationRole(request.role);
     const user = await this.prisma.user.create({

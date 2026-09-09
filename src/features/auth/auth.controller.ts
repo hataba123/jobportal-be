@@ -39,68 +39,25 @@ export class AuthController {
    * Luôn trả về object thuần, không throw lỗi bất ngờ, log lỗi nếu có
    */
   @Post('register')
-  async register(@Body() request: RegisterRequestDto): Promise<any> {
-    try {
-      const token = await this.authService.registerAsync(request);
-      if (!token) {
-        return {
-          token: '',
-          user: null,
-          error: 'Email đã được sử dụng.',
-        };
-      }
-      const user = await this.authService.getUserByEmailAsync(request.email);
-      // Trả về đúng kiểu AuthResponseDto, user luôn là UserDto (không null)
-      if (!user) {
-        return {
-          token: token ?? '',
-          user: {
-            id: '',
-            email: '',
-            fullName: '',
-            role: 2,
-          },
-          error: null,
-        };
-      }
-      return {
-        token: token ?? '',
-        user: {
-          id: user.id,
-          email: user.email,
-          fullName: user.fullName ?? '',
-          role:
-            typeof user.role === 'number'
-              ? user.role
-              : this.mapUserRoleToIndex(user.role),
-        },
-        error: null,
-      };
-    } catch (e) {
-      // Log lỗi backend để debug
-      console.error('Register error:', e);
-      return {
-        token: '',
-        user: null,
-        error: e?.message || 'Đăng ký thất bại',
-      };
-    }
+  async register(@Body() request: RegisterRequestDto): Promise<AuthResponseDto> {
+    const token = await this.authService.registerAsync(request);
+    const user = await this.authService.getUserByEmailAsync(request.email);
+    return {
+      token,
+      user: this.toUserDtoOrThrow(user),
+    };
   }
 
   // Đăng nhập tài khoản
   // Trả về AuthResponseDto với user.role là số (enum index)
   @Post('login')
   async login(@Body() request: LoginRequestDto): Promise<AuthResponseDto> {
-    try {
-      const token = await this.authService.loginAsync(request);
-      const user = await this.authService.getUserByEmailAsync(request.email);
-      return {
-        token,
-        user: this.toUserDtoOrThrow(user),
-      };
-    } catch (e) {
-      throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
-    }
+    const token = await this.authService.loginAsync(request);
+    const user = await this.authService.getUserByEmailAsync(request.email);
+    return {
+      token,
+      user: this.toUserDtoOrThrow(user),
+    };
   }
 
   // Lấy thông tin user hiện tại từ token

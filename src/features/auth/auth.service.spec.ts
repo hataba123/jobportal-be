@@ -69,6 +69,18 @@ describe('AuthService', () => {
     ).resolves.toBe('token');
   });
 
+  it('rejects a duplicate email with a conflict error', async () => {
+    prisma.user.findUnique = jest.fn().mockResolvedValue({ id: 'existing' });
+
+    await expect(
+      service.registerAsync({
+        email: 'existing@example.com',
+        password: 'password',
+        fullName: 'Existing',
+      } as any),
+    ).rejects.toMatchObject({ status: 409 });
+  });
+
   it('should login', async () => {
     prisma.user.findUnique = jest
       .fn()
