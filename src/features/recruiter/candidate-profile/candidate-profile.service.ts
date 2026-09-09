@@ -43,7 +43,11 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
       fullName: c.user.fullName,
       skills: c.skills ?? undefined,
       experience: c.experience ?? undefined,
+      experienceYears: c.experienceYears ?? undefined,
       education: c.education ?? undefined,
+      preferredLocation: c.preferredLocation ?? undefined,
+      preferredJobType: c.preferredJobType ?? undefined,
+      expectedSalary: c.expectedSalary ? Number(c.expectedSalary) : undefined,
     }));
   }
 
@@ -66,6 +70,10 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
       experience: c.experience ?? undefined,
       skills: c.skills ?? undefined,
       education: c.education ?? undefined,
+      experienceYears: c.experienceYears ?? undefined,
+      preferredLocation: c.preferredLocation ?? undefined,
+      preferredJobType: c.preferredJobType ?? undefined,
+      expectedSalary: c.expectedSalary ? Number(c.expectedSalary) : undefined,
       dob: c.dob
         ? c.dob instanceof Date
           ? c.dob.toISOString().slice(0, 10)
@@ -129,7 +137,11 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
       fullName: c.user.fullName,
       skills: c.skills ?? undefined,
       experience: c.experience ?? undefined,
+      experienceYears: c.experienceYears ?? undefined,
       education: c.education ?? undefined,
+      preferredLocation: c.preferredLocation ?? undefined,
+      preferredJobType: c.preferredJobType ?? undefined,
+      expectedSalary: c.expectedSalary ? Number(c.expectedSalary) : undefined,
     }));
   }
 
@@ -149,6 +161,10 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
       experience: c.experience ?? undefined,
       skills: c.skills ?? undefined,
       education: c.education ?? undefined,
+      experienceYears: c.experienceYears ?? undefined,
+      preferredLocation: c.preferredLocation ?? undefined,
+      preferredJobType: c.preferredJobType ?? undefined,
+      expectedSalary: c.expectedSalary ? Number(c.expectedSalary) : undefined,
       dob: c.dob
         ? c.dob instanceof Date
           ? c.dob.toISOString().slice(0, 10)

@@ -45,6 +45,7 @@ model User {
   savedJobs   SavedJob[]
   oauthAccounts OAuthAccount[]
   passwordResetTokens PasswordResetToken[]
+  matchResults MatchResult[]
 }
 
 enum JobPostStatus {
@@ -147,8 +148,12 @@ model CandidateProfile {
   user        User     @relation(fields: [userId], references: [id])
   resumeUrl   String?  @db.VarChar(300)
   experience  String?  @db.VarChar(1000)
+  experienceYears Int?
   skills      String?  @db.VarChar(500)
   education   String?  @db.VarChar(200)
+  preferredLocation String? @db.VarChar(200)
+  preferredJobType String? @db.VarChar(100)
+  expectedSalary Decimal? @db.Decimal(18,2)
   dob         DateTime?
   gender      String?  @db.VarChar(10)
   portfolioUrl String? @db.VarChar(300)
@@ -220,10 +225,34 @@ model JobPost {
   createdAt    DateTime  @default(now())
   expiresAt    DateTime?
   status       JobPostStatus @default(Active)
+  minExperienceYears Int?
+  educationRequirement String? @db.VarChar(200)
   categoryId   String
   category     Category  @relation(fields: [categoryId], references: [id])
   jobs         Job[]
   savedJobs    SavedJob[]
+  matchResults MatchResult[]
+}
+
+/// Kết quả matching được tính theo phiên bản thuật toán và fingerprint đầu vào
+model MatchResult {
+  id               String   @id @default(uuid())
+  candidateId      String
+  jobPostId        String
+  totalScore       Int
+  breakdown        Json
+  matchedSkills    Json
+  missingSkills    Json
+  reasons          Json
+  algorithmVersion String   @db.VarChar(20)
+  inputFingerprint String   @db.VarChar(64)
+  createdAt        DateTime @default(now())
+  candidate        User     @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobPost          JobPost  @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, jobPostId])
+  @@index([jobPostId, totalScore])
+  @@index([candidateId, totalScore])
 }
 
 /// Thông báo

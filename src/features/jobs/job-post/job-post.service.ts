@@ -40,6 +40,8 @@ export class JobPostService implements IJobPostService {
         logo: dto.logo,
         expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
         status: dto.status ?? 'Active',
+        minExperienceYears: dto.minExperienceYears,
+        educationRequirement: dto.educationRequirement,
         employerId,
         applicants: 0,
       },
@@ -74,6 +76,8 @@ export class JobPostService implements IJobPostService {
         logo: dto.logo,
         expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : undefined,
         status: dto.status,
+        minExperienceYears: dto.minExperienceYears,
+        educationRequirement: dto.educationRequirement,
       },
     });
   }

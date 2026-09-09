@@ -80,6 +80,8 @@ export class JobPostService implements IJobPostService {
       categoryId: entity.categoryId,
       status: entity.status,
       expiresAt: entity.expiresAt ?? undefined,
+      minExperienceYears: entity.minExperienceYears ?? undefined,
+      educationRequirement: entity.educationRequirement ?? undefined,
     };
   }
 }

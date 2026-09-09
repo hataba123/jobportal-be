@@ -8,6 +8,8 @@ import {
   IsUUID,
   MaxLength,
   IsEnum,
+  IsInt,
+  Min,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { JobPostStatus } from '@prisma/client';
@@ -73,6 +75,17 @@ export class CreateJobPostDto {
   @IsEnum(JobPostStatus)
   @IsOptional()
   status?: JobPostStatus;
+
+  @Transform(parseNumber)
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  minExperienceYears?: number;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  educationRequirement?: string;
 }
 
 export class UpdateJobPostDto {
@@ -130,4 +143,15 @@ export class UpdateJobPostDto {
   @IsEnum(JobPostStatus)
   @IsOptional()
   status?: JobPostStatus;
+
+  @Transform(parseNumber)
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  minExperienceYears?: number;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  educationRequirement?: string;
 }

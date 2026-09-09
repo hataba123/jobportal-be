@@ -30,6 +30,7 @@ import { CompanyModule as UserCompanyModule } from './features/user/company/comp
 import { NotificationModule as UserNotificationModule } from './features/user/notification/notification.module';
 import { ReviewModule as UserReviewModule } from './features/user/review/review.module';
 import { SavedJobModule } from './features/user/saved-job/saved-job.module';
+import { MatchingModule } from './features/matching/matching.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { SavedJobModule } from './features/user/saved-job/saved-job.module';
     UserNotificationModule,
     UserReviewModule,
     SavedJobModule,
+    MatchingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

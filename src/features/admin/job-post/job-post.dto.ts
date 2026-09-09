@@ -9,6 +9,7 @@ import {
   IsDate,
   IsInt,
   IsEnum,
+  Min,
 } from 'class-validator';
 import { JobPostStatus } from '@prisma/client';
 
@@ -72,6 +73,16 @@ export class JobPostDto {
   @IsDate()
   @IsOptional()
   expiresAt?: Date;
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  minExperienceYears?: number;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  educationRequirement?: string;
 }
 
 export class CreateJobPostDto {
@@ -132,6 +143,16 @@ export class CreateJobPostDto {
   @IsDate()
   @IsOptional()
   expiresAt?: Date;
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  minExperienceYears?: number;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  educationRequirement?: string;
 }
 
 export class UpdateJobPostDto {
@@ -200,4 +221,14 @@ export class UpdateJobPostDto {
   @IsDate()
   @IsOptional()
   expiresAt?: Date;
+
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  minExperienceYears?: number;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(200)
+  educationRequirement?: string;
 }

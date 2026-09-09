@@ -6,6 +6,9 @@ import {
   IsDate,
   MaxLength,
   IsDateString,
+  IsInt,
+  Min,
+  IsNumber,
 } from 'class-validator';
 import { ApplyStatus } from '@prisma/client';
 
@@ -22,9 +25,22 @@ export class CandidateProfileBriefDto {
   @IsString()
   @IsOptional()
   experience?: string;
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  experienceYears?: number;
   @IsString()
   @IsOptional()
   education?: string;
+  @IsString()
+  @IsOptional()
+  preferredLocation?: string;
+  @IsString()
+  @IsOptional()
+  preferredJobType?: string;
+  @IsOptional()
+  @IsNumber()
+  expectedSalary?: number;
 }
 
 export class CandidateProfileDetailDto {
@@ -40,12 +56,25 @@ export class CandidateProfileDetailDto {
   @IsString()
   @IsOptional()
   experience?: string;
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  experienceYears?: number;
   @IsString()
   @IsOptional()
   skills?: string;
   @IsString()
   @IsOptional()
   education?: string;
+  @IsString()
+  @IsOptional()
+  preferredLocation?: string;
+  @IsString()
+  @IsOptional()
+  preferredJobType?: string;
+  @IsOptional()
+  @IsNumber()
+  expectedSalary?: number;
   // Nhận ngày sinh dạng string ISO ("1991-12-04") từ FE
   @IsDateString()
   @IsOptional()
@@ -85,12 +114,25 @@ export class CandidateProfileUpdateDto {
   @IsString()
   @IsOptional()
   experience?: string;
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  experienceYears?: number;
   @IsString()
   @IsOptional()
   skills?: string;
   @IsString()
   @IsOptional()
   education?: string;
+  @IsString()
+  @IsOptional()
+  preferredLocation?: string;
+  @IsString()
+  @IsOptional()
+  preferredJobType?: string;
+  @IsOptional()
+  @IsNumber()
+  expectedSalary?: number;
   // Nhận ngày sinh dạng string ISO ("1991-12-04") từ FE
   @IsDateString()
   @IsOptional()
