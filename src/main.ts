@@ -50,6 +50,10 @@ async function bootstrap(): Promise<void> {
       allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
     });
 
+    if (!process.env.JWT_SECRET || !process.env.OAUTH_EXCHANGE_SECRET) {
+      throw new Error('JWT_SECRET và OAUTH_EXCHANGE_SECRET là bắt buộc.');
+    }
+
     // Đăng ký static files với Fastify
     await app.register(require('@fastify/static'), {
       root: path.join(process.cwd(), 'wwwroot'),

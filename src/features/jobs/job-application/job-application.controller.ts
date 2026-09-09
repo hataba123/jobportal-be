@@ -17,6 +17,7 @@ import {
   RecruiterOnly,
   AdminOnly,
   AdminAndRecruiter,
+  Roles,
 } from '../../../common/decorators/roles.decorator';
 import { JobApplicationService } from './job-application.service';
 import {
@@ -70,10 +71,16 @@ export class JobApplicationController {
   @AdminAndRecruiter()
   @Patch(':id/status')
   async updateStatusPatch(
+    @Req() req,
     @Param('id') id: string,
     @Body() body: UpdateApplyStatusRequest,
   ) {
-    await this.jobApplicationService.updateStatus(id, body.status);
+    await this.jobApplicationService.updateStatus(
+      id,
+      body.status,
+      req.user.userId,
+      String(req.user.role) === '0',
+    );
     return { message: 'Cập nhật trạng thái thành công' };
   }
 
@@ -81,10 +88,16 @@ export class JobApplicationController {
   @AdminAndRecruiter()
   @Put(':id/status')
   async updateStatusPut(
+    @Req() req,
     @Param('id') id: string,
     @Body() body: UpdateApplyStatusRequest,
   ) {
-    await this.jobApplicationService.updateStatus(id, body.status);
+    await this.jobApplicationService.updateStatus(
+      id,
+      body.status,
+      req.user.userId,
+      String(req.user.role) === '0',
+    );
     return { message: 'Cập nhật trạng thái thành công' };
   }
 
@@ -106,9 +119,13 @@ export class JobApplicationController {
   }
 
   // Admin/Candidate: lấy chi tiết 1 record ứng tuyển
-  @AdminAndRecruiter()
+  @Roles('0', '1', '2')
   @Get(':id')
-  async getById(@Param('id') id: string) {
-    return this.jobApplicationService.getById(id);
+  async getById(@Req() req, @Param('id') id: string) {
+    return this.jobApplicationService.getByIdForUser(
+      id,
+      req.user.userId,
+      req.user.role,
+    );
   }
 }

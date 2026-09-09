@@ -1,24 +1,27 @@
-// DTO tạo mới job post
 import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsEnum,
+  IsArray,
   IsDateString,
+  IsNotEmpty,
   IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
-export enum JobType {
-  FULL_TIME = 'FULL_TIME',
-  PART_TIME = 'PART_TIME',
-  INTERNSHIP = 'INTERNSHIP',
-  CONTRACT = 'CONTRACT',
-}
+const parseNumber = ({ value }: { value: unknown }) => {
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? value : parsed;
+  }
+  return value;
+};
 
 export class CreateJobPostDto {
   @IsString()
   @IsNotEmpty()
+  @MaxLength(200)
   title: string;
 
   @IsString()
@@ -27,30 +30,49 @@ export class CreateJobPostDto {
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
   location: string;
 
-  @IsEnum(JobType)
-  jobType: JobType;
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  skillsRequired?: string;
 
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      const num = parseFloat(value);
-      return isNaN(num) ? value : num;
-    }
-    return value;
-  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(50)
+  type?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  tags?: string[];
+
+  @IsUUID()
+  @IsOptional()
+  companyId?: string;
+
+  @IsUUID()
+  categoryId: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(300)
+  logo?: string;
+
+  @Transform(parseNumber)
   @IsNumber()
   salary: number;
 
   @IsDateString()
   @IsOptional()
-  deadline?: string;
+  expiresAt?: string;
 }
 
-// DTO cập nhật job post
 export class UpdateJobPostDto {
   @IsString()
   @IsOptional()
+  @MaxLength(200)
   title?: string;
 
   @IsString()
@@ -59,24 +81,43 @@ export class UpdateJobPostDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(100)
   location?: string;
 
-  @IsEnum(JobType)
+  @IsString()
   @IsOptional()
-  jobType?: JobType;
+  @MaxLength(500)
+  skillsRequired?: string;
 
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      const num = parseFloat(value);
-      return isNaN(num) ? value : num;
-    }
-    return value;
-  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(50)
+  type?: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  tags?: string[];
+
+  @IsUUID()
+  @IsOptional()
+  companyId?: string;
+
+  @IsUUID()
+  @IsOptional()
+  categoryId?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(300)
+  logo?: string;
+
+  @Transform(parseNumber)
   @IsNumber()
   @IsOptional()
   salary?: number;
 
   @IsDateString()
   @IsOptional()
-  deadline?: string;
+  expiresAt?: string;
 }

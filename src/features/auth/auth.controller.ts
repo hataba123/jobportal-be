@@ -5,6 +5,7 @@ import {
   Body,
   Get,
   Req,
+  Headers,
   UseGuards,
   HttpException,
   HttpStatus,
@@ -120,54 +121,10 @@ export class AuthController {
   @Post('oauth-login')
   async oauthLogin(
     @Body() request: OAuthLoginRequestDto,
+    @Headers('x-oauth-exchange-secret') exchangeSecret?: string,
   ): Promise<AuthResponseDto> {
     try {
-      let user = await this.authService.getUserByEmailAsync(request.email);
-      let token: string;
-      if (!user) {
-        // Đăng ký mới với role mặc định là Candidate
-        const registerDto = new RegisterRequestDto();
-        registerDto.email = request.email;
-        // Xử lý chuẩn hóa tên: loại bỏ ký tự lạ, chuẩn hóa Unicode NFC
-        registerDto.fullName = request.name
-          ? request.name.normalize('NFC').replace(/[^\p{L}\p{M}\s'.-]/gu, '')
-          : '';
-        registerDto.password = Math.random().toString(36).slice(-8);
-        registerDto.role = 'Candidate';
-        token = await this.authService.registerAsync(registerDto);
-        user = await this.authService.getUserByEmailAsync(request.email);
-      } else {
-        // Đăng nhập luôn
-        const loginDto = new LoginRequestDto();
-        loginDto.email = request.email;
-        loginDto.password = '';
-        loginDto.isOAuth = true;
-        token = await this.authService.loginAsync(loginDto);
-      }
-      // Trả về đúng kiểu AuthResponseDto, user luôn là UserDto (không null)
-      if (!user) {
-        return {
-          token: token ?? '',
-          user: {
-            id: '',
-            email: '',
-            fullName: '',
-            role: 2,
-          },
-        };
-      }
-      return {
-        token: token ?? '',
-        user: {
-          id: user.id,
-          email: user.email,
-          fullName: user.fullName ?? '',
-          role:
-            typeof user.role === 'number'
-              ? user.role
-              : this.mapUserRoleToIndex(user.role),
-        },
-      };
+      return this.authService.oauthLoginAsync(request, exchangeSecret);
     } catch (e) {
       throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
     }

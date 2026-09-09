@@ -15,7 +15,6 @@ import {
   IsString,
   IsNotEmpty,
   IsOptional,
-  IsBoolean,
   IsUUID,
   IsNumber,
   ValidateIf,
@@ -50,10 +49,6 @@ export class LoginRequestDto {
 
   @IsString()
   password: string;
-
-  @IsBoolean()
-  @IsOptional()
-  isOAuth?: boolean = false;
 }
 
 // DTO đăng nhập OAuth

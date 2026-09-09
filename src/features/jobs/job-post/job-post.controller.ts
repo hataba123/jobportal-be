@@ -34,7 +34,6 @@ export class JobPostController {
   async create(@Req() req, @Body() dto: CreateJobPostDto) {
     // Lấy employerId từ req.user.userId (đồng bộ với JWT payload)
     const employerId = req.user?.userId;
-    console.log('req.user:', req.user); // Log user để debug JWT payload
     return this.jobPostService.create(employerId, dto);
   }
 
@@ -42,23 +41,26 @@ export class JobPostController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoleEnum.Recruiter.toString())
   @Put(':id')
-  async update(@Param('id') id: string, @Body() dto: UpdateJobPostDto) {
-    return this.jobPostService.update(id, dto);
+  async update(
+    @Req() req,
+    @Param('id') id: string,
+    @Body() dto: UpdateJobPostDto,
+  ) {
+    return this.jobPostService.update(id, req.user.userId, dto);
   }
 
   // Xóa job post
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoleEnum.Recruiter.toString())
   @Delete(':id')
-  async delete(@Param('id') id: string) {
-    return this.jobPostService.delete(id);
+  async delete(@Req() req, @Param('id') id: string) {
+    return this.jobPostService.delete(id, req.user.userId);
   }
 
   // Lấy chi tiết job post theo id
   // Trả về 404 nếu không tìm thấy, log id để debug
   @Get(':id')
   async getById(@Param('id') id: string) {
-    console.log('GET job post by id:', id); // Log id để debug
     const jobPost = await this.jobPostService.getById(id);
     if (!jobPost)
       throw new NotFoundException('Không tìm thấy job post với id: ' + id);
@@ -95,7 +97,6 @@ export class JobPostController {
   @Get('/my-posts')
   // Lấy job post của recruiter hiện tại (my-posts)
   async getMyPosts(@Req() req) {
-    console.log('req.user:', req.user); // Log user để debug JWT payload
     const employerId = req.user?.userId;
     return this.jobPostService.getByEmployer(employerId);
   }

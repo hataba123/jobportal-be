@@ -42,6 +42,19 @@ model User {
   notifications Notification[]
   reviews     Review[]
   savedJobs   SavedJob[]
+  oauthAccounts OAuthAccount[]
+}
+
+model OAuthAccount {
+  id                String   @id @default(uuid())
+  userId            String
+  provider          String   @db.VarChar(40)
+  providerAccountId String   @db.VarChar(255)
+  createdAt         DateTime @default(now())
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 /// Bảng blog
@@ -160,6 +173,9 @@ model Job {
   status      ApplyStatus @default(Pending)
   jobPost     JobPost     @relation(fields: [jobPostId], references: [id])
   candidate   User        @relation("CandidateJobs", fields: [candidateId], references: [id])
+
+  @@unique([candidateId, jobPostId])
+  @@index([jobPostId, status])
 }
 
 /// Bảng đăng tin tuyển dụng
@@ -179,6 +195,7 @@ model JobPost {
   tags         String?   @db.VarChar(500)
   applicants   Int
   createdAt    DateTime  @default(now())
+  expiresAt    DateTime?
   categoryId   String
   category     Category  @relation(fields: [categoryId], references: [id])
   jobs         Job[]
@@ -216,4 +233,7 @@ model SavedJob {
   jobPostId String
   jobPost   JobPost  @relation(fields: [jobPostId], references: [id])
   savedAt   DateTime @default(now())
+
+  @@unique([userId, jobPostId])
+  @@index([jobPostId])
 }

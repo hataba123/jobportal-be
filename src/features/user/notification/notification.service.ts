@@ -31,8 +31,15 @@ export class NotificationService implements INotificationService {
 
   // Tạo mới thông báo (chỉ dùng cho admin)
   async create(dto: CreateNotificationDto): Promise<NotificationDto> {
-    // Hàm này chỉ dùng cho admin, user không dùng, throw lỗi
-    throw new Error('Not implemented');
+    const notification = await this.prisma.notification.create({
+      data: {
+        userId: dto.userId,
+        message: dto.message,
+        type: dto.type,
+        read: false,
+      },
+    });
+    return this.toDto(notification);
   }
 
   // Đánh dấu đã đọc
@@ -62,8 +69,10 @@ export class NotificationService implements INotificationService {
   }
 
   // Lấy chi tiết thông báo (user)
-  async getByIdAsync(id: string): Promise<NotificationDto | null> {
-    const n = await this.prisma.notification.findUnique({ where: { id } });
+  async getByIdAsync(id: string, userId?: string): Promise<NotificationDto | null> {
+    const n = await this.prisma.notification.findFirst({
+      where: { id, ...(userId ? { userId } : {}) },
+    });
     if (!n) return null;
     return {
       id: n.id,
@@ -76,17 +85,37 @@ export class NotificationService implements INotificationService {
   }
 
   // Đánh dấu đã đọc (user)
-  async markAsReadAsync(id: string): Promise<boolean> {
-    const n = await this.prisma.notification.update({
-      where: { id },
+  async markAsReadAsync(id: string, userId?: string): Promise<boolean> {
+    const result = await this.prisma.notification.updateMany({
+      where: { id, ...(userId ? { userId } : {}) },
       data: { read: true },
     });
-    return !!n;
+    return result.count > 0;
   }
 
   // Xoá thông báo (user)
-  async deleteAsync(id: string): Promise<boolean> {
-    await this.prisma.notification.delete({ where: { id } });
-    return true;
+  async deleteAsync(id: string, userId?: string): Promise<boolean> {
+    const result = await this.prisma.notification.deleteMany({
+      where: { id, ...(userId ? { userId } : {}) },
+    });
+    return result.count > 0;
+  }
+
+  private toDto(n: {
+    id: string;
+    userId: string;
+    message: string;
+    read: boolean;
+    createdAt: Date;
+    type: string | null;
+  }): NotificationDto {
+    return {
+      id: n.id,
+      userId: n.userId,
+      message: n.message,
+      read: n.read,
+      createdAt: n.createdAt,
+      type: n.type || undefined,
+    };
   }
 }

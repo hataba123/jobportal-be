@@ -17,9 +17,10 @@ describe('RecruiterDashboardService', () => {
             jobPost: {
               findMany: jest.fn(),
             },
-            jobApplication: {
+            job: {
               count: jest.fn(),
               findMany: jest.fn(),
+              groupBy: jest.fn().mockResolvedValue([]),
             },
           },
         },

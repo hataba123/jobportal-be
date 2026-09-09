@@ -35,6 +35,7 @@ describe('RecruiterCompanyController', () => {
       name: 'Test Company',
       openJobs: 0,
       rating: 0,
+      tags: [],
     };
     jest.spyOn(service, 'getMyCompany').mockResolvedValue(mockCompany as any);
     const req = { user: { userId: 'reer-id' } };

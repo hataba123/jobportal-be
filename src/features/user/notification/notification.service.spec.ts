@@ -16,8 +16,13 @@ describe('NotificationService', () => {
             notification: {
               findMany: jest.fn().mockResolvedValue([]),
               findUnique: jest.fn().mockResolvedValue(null),
-              update: jest.fn().mockResolvedValue({}),
-              delete: jest.fn().mockResolvedValue({}),
+              findFirst: jest.fn().mockResolvedValue(null),
+              create: jest.fn().mockResolvedValue({
+                id: '1', userId: 'id', message: 'msg', read: false,
+                createdAt: new Date(), type: null,
+              }),
+              updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+              deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
             },
           },
         },
@@ -44,20 +49,23 @@ describe('NotificationService', () => {
 
   // Test markAsReadAsync
   it('should return true for markAsReadAsync', async () => {
-    prisma.notification.update = jest.fn().mockResolvedValue({});
+    prisma.notification.updateMany = jest.fn().mockResolvedValue({ count: 1 });
     expect(await service.markAsReadAsync('id')).toBe(true);
   });
 
   // Test deleteAsync
   it('should return true for deleteAsync', async () => {
-    prisma.notification.delete = jest.fn().mockResolvedValue({});
+    prisma.notification.deleteMany = jest.fn().mockResolvedValue({ count: 1 });
     expect(await service.deleteAsync('id')).toBe(true);
   });
 
-  // Test create throws error
-  it('should throw error for create', async () => {
+  it('should create a notification', async () => {
     await expect(
       service.create({ userId: 'id', message: 'msg' }),
-    ).rejects.toThrow('Not implemented');
+    ).resolves.toMatchObject({
+      userId: 'id',
+      message: 'msg',
+      read: false,
+    });
   });
 });

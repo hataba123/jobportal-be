@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateJobPostDto, UpdateJobPostDto } from './job-post.dto';
 import { IJobPostService } from './job-post.iservice';
@@ -11,28 +16,75 @@ export class JobPostService implements IJobPostService {
 
   // Tạo job post mới
   async create(employerId: string, dto: CreateJobPostDto): Promise<any> {
-    // Tạo job post mới, bổ sung các trường bắt buộc: applicants (mảng rỗng), categoryId
-    // Tạo job post mới, bổ sung các trường bắt buộc: applicants (số lượng ứng viên), categoryId
+    if (!employerId) {
+      throw new BadRequestException('Không xác định được nhà tuyển dụng.');
+    }
+    const category = await this.prisma.category.findUnique({
+      where: { id: dto.categoryId },
+    });
+    if (!category) {
+      throw new BadRequestException('Danh mục công việc không tồn tại.');
+    }
+
     return this.prisma.jobPost.create({
       data: {
-        ...dto,
+        title: dto.title,
+        description: dto.description,
+        skillsRequired: dto.skillsRequired,
+        location: dto.location,
+        salary: dto.salary,
+        type: dto.type,
+        tags: dto.tags ? JSON.stringify(dto.tags) : null,
+        companyId: dto.companyId,
+        categoryId: dto.categoryId,
+        logo: dto.logo,
+        expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
         employerId,
-        applicants: 0, // nếu applicants là số lượng, khởi tạo = 0
-        categoryId: (dto as any).categoryId, // ép kiểu nếu DTO chưa có, cần bổ sung vào DTO
+        applicants: 0,
       },
     });
   }
 
   // Cập nhật job post
-  async update(id: string, dto: UpdateJobPostDto): Promise<any> {
+  async update(
+    id: string,
+    employerId: string,
+    dto: UpdateJobPostDto,
+  ): Promise<any> {
+    const job = await this.prisma.jobPost.findUnique({ where: { id } });
+    if (!job) {
+      throw new NotFoundException('Không tìm thấy job post.');
+    }
+    if (job.employerId !== employerId) {
+      throw new ForbiddenException('Bạn không có quyền sửa tin này.');
+    }
     return this.prisma.jobPost.update({
       where: { id },
-      data: dto,
+      data: {
+        title: dto.title,
+        description: dto.description,
+        skillsRequired: dto.skillsRequired,
+        location: dto.location,
+        salary: dto.salary,
+        type: dto.type,
+        tags: dto.tags ? JSON.stringify(dto.tags) : undefined,
+        companyId: dto.companyId,
+        categoryId: dto.categoryId,
+        logo: dto.logo,
+        expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : undefined,
+      },
     });
   }
 
   // Xóa job post
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string, employerId: string): Promise<boolean> {
+    const job = await this.prisma.jobPost.findUnique({ where: { id } });
+    if (!job) {
+      throw new NotFoundException('Không tìm thấy job post.');
+    }
+    if (job.employerId !== employerId) {
+      throw new ForbiddenException('Bạn không có quyền xóa tin này.');
+    }
     await this.prisma.jobPost.delete({ where: { id } });
     return true;
   }
@@ -87,7 +139,8 @@ export class JobPostService implements IJobPostService {
 
   // Lấy job post theo employer
   async getByEmployer(employerId: string): Promise<any[]> {
-    return this.prisma.jobPost.findMany({ where: { employerId } });
+    const jobs = await this.prisma.jobPost.findMany({ where: { employerId } });
+    return jobs.map(this.parseTags);
   }
 
   // Lấy job post theo công ty

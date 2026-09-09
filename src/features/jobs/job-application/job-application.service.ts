@@ -2,6 +2,7 @@
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { FileUtil } from '../../../common/utils/file.util';
@@ -170,6 +171,68 @@ export class JobApplicationService implements IJobApplicationService {
       include: { jobPost: true, candidate: true },
     });
     if (!j) return null;
+    return this.toApplyDto(j);
+  }
+
+  // Admin/Recruiter: cập nhật trạng thái ứng tuyển
+  async updateStatus(
+    id: string,
+    status: string,
+    recruiterId?: string,
+    isAdmin = false,
+  ): Promise<boolean> {
+    const application = await this.prisma.job.findUnique({
+      where: { id },
+      include: { jobPost: true },
+    });
+    if (!application) return false;
+    if (
+      !isAdmin &&
+      (!recruiterId || application.jobPost.employerId !== recruiterId)
+    ) {
+      throw new ForbiddenException('Bạn không có quyền cập nhật đơn này.');
+    }
+    if (!Object.values(ApplyStatus).includes(status as ApplyStatus)) {
+      throw new BadRequestException('Trạng thái ứng tuyển không hợp lệ.');
+    }
+    await this.prisma.job.update({
+      where: { id },
+      data: { status: status as ApplyStatus },
+    });
+    return true;
+  }
+
+  async getByIdForUser(
+    id: string,
+    userId: string,
+    role: string | number,
+  ): Promise<ApplyDto | null> {
+    const application = await this.prisma.job.findUnique({
+      where: { id },
+      include: { jobPost: true, candidate: true },
+    });
+    if (!application) return null;
+    const roleValue = String(role);
+    const canRead =
+      roleValue === '0' ||
+      (roleValue === '1' && application.jobPost.employerId === userId) ||
+      (roleValue === '2' && application.candidateId === userId);
+    if (!canRead) {
+      throw new ForbiddenException('Bạn không có quyền xem đơn này.');
+    }
+    return this.toApplyDto(application);
+  }
+
+  private toApplyDto(j: {
+    id: string;
+    candidateId: string;
+    candidate: { fullName: string };
+    jobPostId: string;
+    jobPost: { title: string };
+    cvUrl: string | null;
+    status: ApplyStatus;
+    appliedAt: Date;
+  }): ApplyDto {
     return {
       id: j.id,
       candidateId: j.candidateId,
@@ -180,15 +243,6 @@ export class JobApplicationService implements IJobApplicationService {
       status: j.status as string,
       appliedAt: j.appliedAt,
     };
-  }
-
-  // Admin/Recruiter: cập nhật trạng thái ứng tuyển
-  async updateStatus(id: string, status: string): Promise<boolean> {
-    const updated = await this.prisma.job.update({
-      where: { id },
-      data: { status: status as any },
-    });
-    return !!updated;
   }
 
   // Admin: xóa record ứng tuyển, trả về false nếu không tìm thấy
