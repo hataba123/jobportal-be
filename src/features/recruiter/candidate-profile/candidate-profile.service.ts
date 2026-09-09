@@ -1,8 +1,8 @@
 ﻿// Service xử lý logic Candidate Profile cho recruiter/candidate
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
+import * as fs from 'fs';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { FileUtil } from '../../../common/utils/file.util';
-import { APP_CONSTANTS } from '../../../common/constants/app.constants';
 import {
   CandidateProfileBriefDto,
   CandidateProfileDetailDto,
@@ -57,6 +57,11 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
     recruiterId: string,
     candidateId: string,
   ): Promise<CandidateProfileDetailDto | null> {
+    const hasApplication = await this.prisma.job.findFirst({
+      where: { candidateId, jobPost: { employerId: recruiterId } },
+      select: { id: true },
+    });
+    if (!hasApplication) return null;
     const c = await this.prisma.candidateProfile.findUnique({
       where: { userId: candidateId },
       include: { user: true },
@@ -66,7 +71,7 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
       id: c.id,
       userId: c.userId,
       fullName: c.user.fullName,
-      resumeUrl: c.resumeUrl ?? undefined,
+      resumeUrl: c.resumeUrl ? `/api/candidate-profile/recruiter/${candidateId}/cv` : undefined,
       experience: c.experience ?? undefined,
       skills: c.skills ?? undefined,
       education: c.education ?? undefined,
@@ -98,9 +103,7 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
     const jobs = await this.prisma.job.findMany({
       where: {
         candidateId,
-        jobPost: {
-          company: { userId: recruiterId },
-        },
+        jobPost: { employerId: recruiterId },
       },
       include: { jobPost: true },
     });
@@ -109,7 +112,7 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
       jobPostId: j.jobPostId,
       jobTitle: j.jobPost.title,
       appliedAt: j.appliedAt,
-      cvUrl: j.cvUrl ?? '',
+      cvUrl: j.cvUrl ? `/api/candidate-profile/recruiter/${candidateId}/cv` : '',
       status: j.status,
     }));
   }
@@ -121,7 +124,7 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
   ): Promise<CandidateProfileBriefDto[]> {
     const candidateIds = await this.prisma.job.findMany({
       where: {
-        jobPost: { company: { userId: recruiterId } },
+        jobPost: { employerId: recruiterId },
       },
       select: { candidateId: true },
       distinct: ['candidateId'],
@@ -157,7 +160,7 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
       id: c.id,
       userId: c.userId,
       fullName: c.user.fullName,
-      resumeUrl: c.resumeUrl ?? undefined,
+      resumeUrl: c.resumeUrl ? '/api/candidate-profile/me/cv' : undefined,
       experience: c.experience ?? undefined,
       skills: c.skills ?? undefined,
       education: c.education ?? undefined,
@@ -189,7 +192,7 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
   ): Promise<boolean> {
     try {
       console.log('Update candidateProfile:', { userId, dto });
-      // Tách trường user và trường profile
+      // Tách trường user và trường profile; resumeUrl chỉ được thay đổi qua endpoint upload.
       const { fullName, email, ...profileData } = dto;
       // Chuẩn hóa dob và loại bỏ undefined
       const cleanProfileData: any = {};
@@ -229,32 +232,21 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
   async uploadCv(userId: string, file: any): Promise<string | null> {
     if (!file || !file.originalname) return null;
 
-    // Sử dụng FileUtil để validate file
-    FileUtil.validateCvFile(file.originalname, file.buffer.length);
+    FileUtil.validateCvFile(file.originalname, file.buffer.length, file.buffer);
+    const profile = await this.prisma.candidateProfile.findUnique({ where: { userId } });
+    if (!profile) return null;
 
-    // Tạo tên file unique
-    const fileName = FileUtil.generateUniqueFileName(file.originalname);
-    const uploadPath = require('path').join(
-      process.cwd(),
-      'wwwroot',
-      APP_CONSTANTS.UPLOAD_PATHS.CV,
-    );
-
-    // Đảm bảo thư mục tồn tại
+    const fileName = FileUtil.generateUniqueFileName();
+    const uploadPath = FileUtil.getPrivateCvDirectory();
     FileUtil.ensureDirectoryExists(uploadPath);
+    const filePath = FileUtil.resolvePrivateCvPath(fileName);
+    if (!filePath) throw new Error('Không tạo được đường dẫn CV an toàn.');
+    fs.writeFileSync(filePath, file.buffer, { flag: 'wx' });
 
-    const filePath = require('path').join(uploadPath, fileName);
-    require('fs').writeFileSync(filePath, file.buffer);
-
-    const url = `/${APP_CONSTANTS.UPLOAD_PATHS.CV}/${fileName}`;
-
-    // Cập nhật database
-    await this.prisma.candidateProfile.update({
-      where: { userId },
-      data: { resumeUrl: url },
-    });
-
-    return url;
+    const previousPath = FileUtil.resolvePrivateCvPath(profile.resumeUrl);
+    if (previousPath) FileUtil.deleteFileIfExists(previousPath);
+    await this.prisma.candidateProfile.update({ where: { userId }, data: { resumeUrl: fileName } });
+    return '/api/candidate-profile/me/cv';
   }
 
   // Xóa CV ứng viên với FileUtil
@@ -265,14 +257,8 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
       });
       if (!profile || !profile.resumeUrl) return false;
 
-      const filePath = require('path').join(
-        process.cwd(),
-        'wwwroot',
-        profile.resumeUrl.replace(/^\//, ''),
-      );
-
-      // Sử dụng FileUtil để xóa file
-      FileUtil.deleteFileIfExists(filePath);
+      const filePath = FileUtil.resolvePrivateCvPath(profile.resumeUrl);
+      if (filePath) FileUtil.deleteFileIfExists(filePath);
 
       await this.prisma.candidateProfile.update({
         where: { userId },
@@ -283,5 +269,23 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
     } catch {
       return false;
     }
+  }
+
+  async getCvFile(
+    actorId: string,
+    candidateId: string,
+    isAdmin = false,
+  ): Promise<{ buffer: Buffer; fileName: string } | null> {
+    if (!isAdmin) {
+      const application = await this.prisma.job.findFirst({
+        where: { candidateId, jobPost: { employerId: actorId } },
+        select: { id: true },
+      });
+      if (!application) throw new ForbiddenException('Bạn không có quyền tải CV này.');
+    }
+    const profile = await this.prisma.candidateProfile.findUnique({ where: { userId: candidateId } });
+    const filePath = FileUtil.resolvePrivateCvPath(profile?.resumeUrl);
+    if (!filePath || !fs.existsSync(filePath)) return null;
+    return { buffer: fs.readFileSync(filePath), fileName: 'resume.pdf' };
   }
 }

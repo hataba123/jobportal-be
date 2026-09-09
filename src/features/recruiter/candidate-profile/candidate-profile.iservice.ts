@@ -28,4 +28,9 @@ export interface IRecruiterCandidateService {
   update(userId: string, dto: CandidateProfileUpdateDto): Promise<boolean>;
   uploadCv(userId: string, file: any): Promise<string | null>;
   deleteCv(userId: string): Promise<boolean>;
+  getCvFile(
+    actorId: string,
+    candidateId: string,
+    isAdmin?: boolean,
+  ): Promise<{ buffer: Buffer; fileName: string } | null>;
 }

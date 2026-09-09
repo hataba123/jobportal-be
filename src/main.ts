@@ -9,6 +9,7 @@ import {
 import * as path from 'path';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { APP_CONSTANTS } from './common/constants/app.constants';
 
 // Enum quản lý môi trường để tránh hardcode
 enum Environment {
@@ -27,7 +28,9 @@ async function bootstrap(): Promise<void> {
     );
 
     // Đăng ký multipart cho Fastify (bắt buộc để upload file)
-    await app.register(require('@fastify/multipart'));
+    await app.register(require('@fastify/multipart'), {
+      limits: { fileSize: APP_CONSTANTS.MAX_FILE_SIZE },
+    });
 
     // Cấu hình CORS tập trung với validation domain
     app.enableCors({
@@ -59,7 +62,16 @@ async function bootstrap(): Promise<void> {
       throw new Error('JWT_SECRET và OAUTH_EXCHANGE_SECRET là bắt buộc.');
     }
 
-    // Đăng ký static files với Fastify
+    // CV chỉ được tải qua endpoint có kiểm tra quyền; chặn thư mục CV cũ nếu còn dữ liệu legacy.
+    const fastifyInstance = app.getHttpAdapter().getInstance();
+    fastifyInstance.addHook('onRequest', async (request: any, reply: any) => {
+      const pathname = String(request.raw?.url ?? '').split('?')[0];
+      if (pathname.startsWith('/uploads/cv')) {
+        return reply.code(404).send();
+      }
+    });
+
+    // Đăng ký static files với Fastify (logo/hình ảnh công khai; CV đã bị chặn ở hook trên)
     await app.register(require('@fastify/static'), {
       root: path.join(process.cwd(), 'wwwroot'),
       prefix: '/',

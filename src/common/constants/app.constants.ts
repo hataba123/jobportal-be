@@ -6,7 +6,9 @@ export const APP_CONSTANTS = {
 
   // File upload
   MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
-  ALLOWED_FILE_TYPES: ['pdf', 'doc', 'docx'] as const,
+  // MVP chỉ nhận PDF có chữ ký file hợp lệ; không nhận DOC/DOCX hoặc file giả đuôi.
+  ALLOWED_FILE_TYPES: ['pdf'] as const,
+  PRIVATE_CV_DIRECTORY: 'private-data/cv',
   UPLOAD_PATHS: {
     CV: 'uploads/cv',
     LOGO: 'uploads/logo',

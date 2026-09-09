@@ -110,9 +110,6 @@ export class CandidateProfileUpdateDto {
   email?: string;
   @IsString()
   @IsOptional()
-  resumeUrl?: string;
-  @IsString()
-  @IsOptional()
   experience?: string;
   @IsInt()
   @Min(0)

@@ -51,23 +51,14 @@ export class JobApplicationService implements IJobApplicationService {
     if (!candidateProfile)
       throw new NotFoundException('Hồ sơ ứng viên chưa tồn tại.');
 
-    // Sử dụng FileUtil để validate CV nếu có
-    let cvUrl = request.cvUrl ?? candidateProfile.resumeUrl ?? undefined;
+    // CV chỉ lấy từ hồ sơ đã upload; không tin đường dẫn client gửi lên.
+    const cvUrl = candidateProfile.resumeUrl ?? undefined;
     if (!cvUrl)
       throw new BadRequestException('Bạn cần tải lên CV trước khi ứng tuyển.');
 
-    // Kiểm tra file CV có hợp lệ không (nếu có đường dẫn file local)
-    if (cvUrl && cvUrl.startsWith('/uploads/')) {
-      const filePath = require('path').join(
-        process.cwd(),
-        'wwwroot',
-        cvUrl.replace(/^\//, ''),
-      );
-      if (!require('fs').existsSync(filePath)) {
-        throw new BadRequestException(
-          'File CV không tồn tại, vui lòng tải lên lại.',
-        );
-      }
+    const filePath = FileUtil.resolvePrivateCvPath(cvUrl);
+    if (!filePath || !require('fs').existsSync(filePath)) {
+      throw new BadRequestException('File CV không tồn tại, vui lòng tải lên lại.');
     }
 
     // Kiểm tra duplicate application
@@ -129,7 +120,9 @@ export class JobApplicationService implements IJobApplicationService {
       fullName: a.candidate.fullName,
       email: a.candidate.email,
       appliedAt: a.appliedAt,
-      cvUrl: a.cvUrl ?? undefined,
+      cvUrl: a.cvUrl
+        ? `/api/candidate-profile/recruiter/${a.candidateId}/cv`
+        : undefined,
       status: a.status as string,
     }));
   }
@@ -164,7 +157,9 @@ export class JobApplicationService implements IJobApplicationService {
       candidateName: j.candidate.fullName,
       jobPostId: j.jobPostId,
       jobTitle: j.jobPost.title,
-      cvUrl: j.cvUrl ?? '',
+      cvUrl: j.cvUrl
+        ? `/api/candidate-profile/recruiter/${j.candidateId}/cv`
+        : '',
       status: j.status as string,
       appliedAt: j.appliedAt,
     }));
@@ -226,7 +221,7 @@ export class JobApplicationService implements IJobApplicationService {
     if (!canRead) {
       throw new ForbiddenException('Bạn không có quyền xem đơn này.');
     }
-    return this.toApplyDto(application);
+    return this.toApplyDto(application, roleValue === '2');
   }
 
   private toApplyDto(j: {
@@ -238,14 +233,18 @@ export class JobApplicationService implements IJobApplicationService {
     cvUrl: string | null;
     status: ApplyStatus;
     appliedAt: Date;
-  }): ApplyDto {
+  }, isCandidateSelf = false): ApplyDto {
     return {
       id: j.id,
       candidateId: j.candidateId,
       candidateName: j.candidate.fullName,
       jobPostId: j.jobPostId,
       jobTitle: j.jobPost.title,
-      cvUrl: j.cvUrl ?? '',
+      cvUrl: j.cvUrl
+        ? isCandidateSelf
+          ? '/api/candidate-profile/me/cv'
+          : `/api/candidate-profile/recruiter/${j.candidateId}/cv`
+        : '',
       status: j.status as string,
       appliedAt: j.appliedAt,
     };

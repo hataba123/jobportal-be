@@ -16,6 +16,8 @@ import {
   UseGuards,
   Req,
   UnauthorizedException,
+  StreamableFile,
+  BadRequestException,
 } from '@nestjs/common';
 import { RecruiterCandidateService } from './candidate-profile.service';
 import {
@@ -43,6 +45,19 @@ export class RecruiterCandidateProfileController {
     const result = await this.candidateService.getByUserId(userId);
     if (!result) throw new NotFoundException('Không tìm thấy hồ sơ ứng viên');
     return result;
+  }
+
+  @Get('me/cv')
+  @Roles('2')
+  async downloadMyCv(@Req() req: Request) {
+    const userId = req.user?.['userId'];
+    if (!userId) throw new UnauthorizedException('Không xác thực được user');
+    const file = await this.candidateService.getCvFile(userId, userId);
+    if (!file) throw new NotFoundException('Không tìm thấy CV.');
+    return new StreamableFile(file.buffer, {
+      type: 'application/pdf',
+      disposition: 'attachment; filename="resume.pdf"',
+    });
   }
 
   // Cập nhật profile ứng viên (self)
@@ -110,6 +125,23 @@ export class RecruiterCandidateProfileController {
     );
   }
 
+  @Get('recruiter/:id/cv')
+  @Roles('0', '1')
+  async downloadCandidateCv(@Req() req: Request, @Param('id') id: string) {
+    const actorId = req.user?.['userId'];
+    if (!actorId) throw new UnauthorizedException('Không xác thực được user');
+    const file = await this.candidateService.getCvFile(
+      actorId,
+      id,
+      String(req.user?.['role']) === '0',
+    );
+    if (!file) throw new NotFoundException('Không tìm thấy CV.');
+    return new StreamableFile(file.buffer, {
+      type: 'application/pdf',
+      disposition: 'attachment; filename="resume.pdf"',
+    });
+  }
+
   // Upload CV cho ứng viên (self) - Fastify multipart
   // Viết lại CHUẨN Fastify: lấy file từ req.parts(), log chi tiết lỗi để debug
   @Post('me/upload-cv')
@@ -135,6 +167,9 @@ export class RecruiterCandidateProfileController {
           const chunks: Buffer[] = [];
           for await (const chunk of part.file) {
             chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+          }
+          if (part.file.truncated) {
+            throw new BadRequestException('File CV vượt quá dung lượng cho phép.');
           }
           fileData = {
             originalname: part.filename,

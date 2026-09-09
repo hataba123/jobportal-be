@@ -1,6 +1,7 @@
 // Utility functions xử lý file upload và validation
 import * as path from 'path';
 import * as fs from 'fs';
+import { randomUUID } from 'crypto';
 import { BadRequestException } from '@nestjs/common';
 import { APP_CONSTANTS } from '../constants/app.constants';
 
@@ -20,12 +21,8 @@ export class FileUtil {
   }
 
   // Tạo tên file unique
-  static generateUniqueFileName(originalName: string): string {
-    const ext = path.extname(originalName);
-    const name = path.basename(originalName, ext);
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(2, 8);
-    return `${name}_${timestamp}_${random}${ext}`;
+  static generateUniqueFileName(): string {
+    return `${randomUUID()}.pdf`;
   }
 
   // Đảm bảo thư mục tồn tại
@@ -49,7 +46,7 @@ export class FileUtil {
   }
 
   // Validate file cho CV upload
-  static validateCvFile(filename: string, fileSize: number): void {
+  static validateCvFile(filename: string, fileSize: number, buffer: Buffer): void {
     // Convert readonly array thành mutable array để sử dụng
     const allowedTypes = [...APP_CONSTANTS.ALLOWED_FILE_TYPES];
 
@@ -64,5 +61,20 @@ export class FileUtil {
         `File không được vượt quá ${APP_CONSTANTS.MAX_FILE_SIZE / 1024 / 1024}MB`,
       );
     }
+
+    if (buffer.length < 5 || buffer.subarray(0, 5).toString('ascii') !== '%PDF-') {
+      throw new BadRequestException('Nội dung file không phải PDF hợp lệ.');
+    }
+  }
+
+  static getPrivateCvDirectory(): string {
+    return path.join(process.cwd(), APP_CONSTANTS.PRIVATE_CV_DIRECTORY);
+  }
+
+  static resolvePrivateCvPath(storageKey: string | null | undefined): string | null {
+    if (!storageKey || !/^[0-9a-f-]{36}\.pdf$/i.test(storageKey)) return null;
+    const root = path.resolve(this.getPrivateCvDirectory());
+    const resolved = path.resolve(root, storageKey);
+    return resolved === root || resolved.startsWith(`${root}${path.sep}`) ? resolved : null;
   }
 }
