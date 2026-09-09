@@ -31,6 +31,7 @@ import { NotificationModule as UserNotificationModule } from './features/user/no
 import { ReviewModule as UserReviewModule } from './features/user/review/review.module';
 import { SavedJobModule } from './features/user/saved-job/saved-job.module';
 import { MatchingModule } from './features/matching/matching.module';
+import { PaymentModule } from './features/payments/payment.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { MatchingModule } from './features/matching/matching.module';
     UserReviewModule,
     SavedJobModule,
     MatchingModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [AppService],
