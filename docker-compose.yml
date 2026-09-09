@@ -23,8 +23,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-jobportal}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-jobportal}?schema=public
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in the environment}
       OAUTH_EXCHANGE_SECRET: ${OAUTH_EXCHANGE_SECRET:?Set OAUTH_EXCHANGE_SECRET in the environment}
-      VNPAY_TMN_CODE: ${VNPAY_TMN_CODE:-sandbox}
-      VNPAY_HASH_SECRET: ${VNPAY_HASH_SECRET:-sandbox-secret}
+      VNPAY_TMN_CODE: ${VNPAY_TMN_CODE:?Set VNPAY_TMN_CODE in the environment}
+      VNPAY_HASH_SECRET: ${VNPAY_HASH_SECRET:?Set VNPAY_HASH_SECRET in the environment}
       VNPAY_RETURN_URL: ${VNPAY_RETURN_URL:-http://localhost:3000/vi/payment/return}
     depends_on:
       postgres:
