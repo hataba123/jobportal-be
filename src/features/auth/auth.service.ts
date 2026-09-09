@@ -80,11 +80,13 @@ export class AuthService implements IAuthService {
       throw new UnauthorizedException('OAuth exchange không hợp lệ.');
     }
 
+    const identity = await this.verifyOAuthToken(request.provider, request.accessToken);
+
     const existingAccount = await this.prisma.oAuthAccount.findUnique({
       where: {
         provider_providerAccountId: {
-          provider: request.provider,
-          providerAccountId: request.providerAccountId,
+          provider: identity.provider,
+          providerAccountId: identity.providerAccountId,
         },
       },
       include: { user: true },
@@ -96,7 +98,7 @@ export class AuthService implements IAuthService {
     }
     if (!user) {
       const existingEmail = await this.prisma.user.findUnique({
-        where: { email: request.email },
+        where: { email: identity.email },
       });
       if (existingEmail) {
         throw new BadRequestException(
@@ -105,19 +107,19 @@ export class AuthService implements IAuthService {
       }
 
       const passwordHash = await bcrypt.hash(
-        `${request.provider}:${request.providerAccountId}:${randomUUID()}`,
+        `${identity.provider}:${identity.providerAccountId}:${randomUUID()}`,
         10,
       );
       user = await this.prisma.user.create({
         data: {
-          email: request.email,
-          fullName: request.name,
+          email: identity.email,
+          fullName: identity.name,
           passwordHash,
           role: 'Candidate',
           oauthAccounts: {
             create: {
-              provider: request.provider,
-              providerAccountId: request.providerAccountId,
+              provider: identity.provider,
+              providerAccountId: identity.providerAccountId,
             },
           },
           candidateProfile: { create: {} },
@@ -135,6 +137,95 @@ export class AuthService implements IAuthService {
         role: this.mapUserRoleToIndex(user.role),
       },
     };
+  }
+
+  /** Xác minh access token với provider, không tin email/ID do client gửi. */
+  private async verifyOAuthToken(
+    provider: string,
+    accessToken: string,
+  ): Promise<{
+    provider: string;
+    providerAccountId: string;
+    email: string;
+    name: string;
+  }> {
+    const normalizedProvider = provider.trim().toLowerCase();
+    const token = accessToken.trim();
+    if (!token) throw new UnauthorizedException('OAuth token trống.');
+
+    const endpoints: Record<string, string> = {
+      google: 'https://openidconnect.googleapis.com/v1/userinfo',
+      facebook: 'https://graph.facebook.com/me?fields=id,name,email',
+      github: 'https://api.github.com/user',
+    };
+    const endpoint = endpoints[normalizedProvider];
+    if (!endpoint) throw new UnauthorizedException('OAuth provider không được hỗ trợ.');
+
+    const profile = await this.fetchOAuthJson(endpoint, token);
+    const providerAccountId = this.readString(profile, ['sub', 'id']);
+    let email = this.readString(profile, ['email']);
+    const name = this.readString(profile, ['name', 'login']);
+
+    if (normalizedProvider === 'google' && profile.email_verified === false) {
+      throw new UnauthorizedException('Email Google chưa được xác minh.');
+    }
+
+    // GitHub có thể không trả email ở /user; chỉ lấy email đã xác minh.
+    if (normalizedProvider === 'github' && !email) {
+      const emails = await this.fetchOAuthJson(
+        'https://api.github.com/user/emails',
+        token,
+      );
+      if (Array.isArray(emails)) {
+        const verified = emails.find(
+          (item) =>
+            item &&
+            typeof item === 'object' &&
+            (item as { verified?: unknown }).verified === true &&
+            (item as { primary?: unknown }).primary === true,
+        );
+        if (verified && typeof (verified as { email?: unknown }).email === 'string') {
+          email = (verified as { email: string }).email.trim();
+        }
+      }
+    }
+
+    if (!providerAccountId || !email) {
+      throw new UnauthorizedException('OAuth provider không trả về danh tính hợp lệ.');
+    }
+
+    return {
+      provider: normalizedProvider,
+      providerAccountId,
+      email: email.toLowerCase(),
+      name: name || email.split('@')[0],
+    };
+  }
+
+  private async fetchOAuthJson(url: string, accessToken: string): Promise<any> {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/json',
+          'User-Agent': 'JobPortal/1.0',
+        },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) throw new Error('provider rejected token');
+      return await response.json();
+    } catch {
+      throw new UnauthorizedException('Không thể xác minh OAuth token.');
+    }
+  }
+
+  private readString(value: any, keys: string[]): string | null {
+    for (const key of keys) {
+      if (typeof value?.[key] === 'string' && value[key].trim()) {
+        return value[key].trim();
+      }
+    }
+    return null;
   }
 
   // Hàm mapping role string/số sang index enum, hỗ trợ cả string số ('0','1','2'), không throw lỗi với dữ liệu cũ

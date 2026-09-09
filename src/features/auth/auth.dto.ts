@@ -17,6 +17,7 @@ import {
   IsOptional,
   IsUUID,
   IsNumber,
+  IsIn,
   ValidateIf,
   MinLength,
 } from 'class-validator';
@@ -84,17 +85,19 @@ export class ResetPasswordRequestDto {
 
 // DTO đăng nhập OAuth
 export class OAuthLoginRequestDto {
-  @IsEmail()
-  email: string;
-
-  @IsString()
-  name: string;
-
+  @IsIn(['google', 'facebook', 'github'])
   @IsString()
   provider: string;
 
   @IsString()
-  providerAccountId: string;
+  @IsNotEmpty()
+  accessToken: string;
+
+  // Các trường email/name/ID từ client không còn được tin; chúng sẽ bị loại
+  // khỏi payload bởi ValidationPipe và được lấy lại từ provider.
+  @IsOptional()
+  @IsString()
+  idToken?: string;
 }
 
 // DTO user trả về cho FE
