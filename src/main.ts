@@ -10,6 +10,7 @@ import * as path from 'path';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { APP_CONSTANTS } from './common/constants/app.constants';
+import { CorrelationIdInterceptor } from './common/interceptors/correlation-id.interceptor';
 
 // Enum quản lý môi trường để tránh hardcode
 enum Environment {
@@ -79,7 +80,10 @@ async function bootstrap(): Promise<void> {
 
     // Đăng ký global filter và interceptor theo chuẩn NestJS
     app.useGlobalFilters(new HttpExceptionFilter());
-    app.useGlobalInterceptors(new LoggingInterceptor());
+    app.useGlobalInterceptors(
+      new CorrelationIdInterceptor(),
+      new LoggingInterceptor(),
+    );
 
     // Cấu hình ValidationPipe cho toàn app với class-validator
     app.useGlobalPipes(

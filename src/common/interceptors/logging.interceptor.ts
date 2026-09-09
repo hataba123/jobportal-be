@@ -27,6 +27,7 @@ export class LoggingInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest();
     const method = request.method;
     const url = request.url;
+    const correlationId = request.correlationId ?? 'n/a';
     const startTime = Date.now();
 
     // Chỉ log các route quan trọng, bỏ qua health check và static files
@@ -34,18 +35,20 @@ export class LoggingInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    this.logger.log(`${method} ${url} - Request bắt đầu`);
+    this.logger.log(`[${correlationId}] ${method} ${url} - Request bắt đầu`);
 
     return next.handle().pipe(
       tap({
         next: (response) => {
           const duration = Date.now() - startTime;
-          this.logger.log(`${method} ${url} - Hoàn thành trong ${duration}ms`);
+          this.logger.log(
+            `[${correlationId}] ${method} ${url} - Hoàn thành trong ${duration}ms`,
+          );
         },
         error: (error) => {
           const duration = Date.now() - startTime;
           this.logger.error(
-            `${method} ${url} - Lỗi trong ${duration}ms: ${error.message}`,
+            `[${correlationId}] ${method} ${url} - Lỗi trong ${duration}ms: ${error.message}`,
           );
         },
       }),

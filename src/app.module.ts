@@ -32,6 +32,7 @@ import { ReviewModule as UserReviewModule } from './features/user/review/review.
 import { SavedJobModule } from './features/user/saved-job/saved-job.module';
 import { MatchingModule } from './features/matching/matching.module';
 import { PaymentModule } from './features/payments/payment.module';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [
@@ -66,7 +67,7 @@ import { PaymentModule } from './features/payments/payment.module';
     MatchingModule,
     PaymentModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [AppService],
 })
 export class AppModule {}
