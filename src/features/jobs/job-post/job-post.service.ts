@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -55,12 +54,11 @@ export class JobPostService implements IJobPostService {
     employerId: string,
     dto: UpdateJobPostDto,
   ): Promise<any> {
-    const job = await this.prisma.jobPost.findUnique({ where: { id } });
+    const job = await this.prisma.jobPost.findFirst({
+      where: { id, employerId, deletedAt: null },
+    });
     if (!job) {
       throw new NotFoundException('Không tìm thấy job post.');
-    }
-    if (job.employerId !== employerId) {
-      throw new ForbiddenException('Bạn không có quyền sửa tin này.');
     }
     return this.prisma.jobPost.update({
       where: { id },
@@ -85,14 +83,16 @@ export class JobPostService implements IJobPostService {
 
   // Xóa job post
   async delete(id: string, employerId: string): Promise<boolean> {
-    const job = await this.prisma.jobPost.findUnique({ where: { id } });
+    const job = await this.prisma.jobPost.findFirst({
+      where: { id, employerId, deletedAt: null },
+    });
     if (!job) {
       throw new NotFoundException('Không tìm thấy job post.');
     }
-    if (job.employerId !== employerId) {
-      throw new ForbiddenException('Bạn không có quyền xóa tin này.');
-    }
-    await this.prisma.jobPost.delete({ where: { id } });
+    await this.prisma.jobPost.update({
+      where: { id },
+      data: { deletedAt: new Date(), status: 'Closed' },
+    });
     return true;
   }
 
@@ -101,6 +101,7 @@ export class JobPostService implements IJobPostService {
     const jobPost = await this.prisma.jobPost.findFirst({
       where: {
         id,
+        deletedAt: null,
         status: 'Active',
         OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
@@ -118,6 +119,7 @@ export class JobPostService implements IJobPostService {
   async getAll(page = 1, pageSize = 20): Promise<PagedResult<any>> {
     const where = {
       status: 'Active' as const,
+      deletedAt: null,
       OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
     };
     const [total, jobs] = await Promise.all([
@@ -170,7 +172,9 @@ export class JobPostService implements IJobPostService {
 
   // Lấy job post theo employer
   async getByEmployer(employerId: string): Promise<any[]> {
-    const jobs = await this.prisma.jobPost.findMany({ where: { employerId } });
+    const jobs = await this.prisma.jobPost.findMany({
+      where: { employerId, deletedAt: null },
+    });
     return jobs.map(this.parseTags);
   }
 
@@ -180,6 +184,7 @@ export class JobPostService implements IJobPostService {
     const jobs = await this.prisma.jobPost.findMany({
       where: {
         companyId,
+        deletedAt: null,
         status: 'Active',
         OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
@@ -192,6 +197,7 @@ export class JobPostService implements IJobPostService {
     const jobs = await this.prisma.jobPost.findMany({
       where: {
         categoryId,
+        deletedAt: null,
         status: 'Active',
         OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },

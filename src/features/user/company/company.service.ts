@@ -10,7 +10,9 @@ export class CompanyService implements ICompanyService {
 
   // Lấy tất cả công ty
   async getAllAsync(): Promise<CompanyDto[]> {
-    const companies = await this.prisma.company.findMany();
+    const companies = await this.prisma.company.findMany({
+      where: { deletedAt: null },
+    });
     return companies.map((c) => ({
       id: c.id,
       name: c.name,
@@ -29,7 +31,9 @@ export class CompanyService implements ICompanyService {
 
   // Lấy công ty theo id
   async getByIdAsync(id: string): Promise<CompanyDto | null> {
-    const c = await this.prisma.company.findUnique({ where: { id } });
+    const c = await this.prisma.company.findFirst({
+      where: { id, deletedAt: null },
+    });
     if (!c) return null;
     return {
       id: c.id,

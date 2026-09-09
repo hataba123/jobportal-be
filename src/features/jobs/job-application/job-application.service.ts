@@ -34,7 +34,7 @@ export class JobApplicationService implements IJobApplicationService {
 
     // Tìm job post theo id
     const jobPost = await this.prisma.jobPost.findFirst({
-      where: { id: request.jobPostId },
+      where: { id: request.jobPostId, deletedAt: null },
     });
     if (
       !jobPost ||
@@ -89,8 +89,8 @@ export class JobApplicationService implements IJobApplicationService {
     console.log('[DEBUG] getCandidatesForJob:', { recruiterId, jobPostId });
 
     // Kiểm tra job có tồn tại không trước
-    const jobExists = await this.prisma.jobPost.findUnique({
-      where: { id: jobPostId },
+    const jobExists = await this.prisma.jobPost.findFirst({
+      where: { id: jobPostId, deletedAt: null },
     });
     console.log('[DEBUG] Job exists:', jobExists ? 'YES' : 'NO');
 

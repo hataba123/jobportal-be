@@ -12,7 +12,11 @@ export class RecruiterCompanyService implements IRecruiterCompanyService {
   // Lấy công ty mà recruiter đang quản lý (dựa vào jobPost)
   async getMyCompany(employerId: string): Promise<RecruiterCompanyDto | null> {
     const jobPost = await this.prisma.jobPost.findFirst({
-      where: { employerId, companyId: { not: null } },
+      where: {
+        employerId,
+        deletedAt: null,
+        companyId: { not: null },
+      },
       include: { company: true },
     });
     if (!jobPost?.company) return null;
@@ -25,7 +29,11 @@ export class RecruiterCompanyService implements IRecruiterCompanyService {
     dto: RecruiterUpdateCompanyDto,
   ): Promise<boolean> {
     const jobPost = await this.prisma.jobPost.findFirst({
-      where: { employerId, companyId: { not: null } },
+      where: {
+        employerId,
+        deletedAt: null,
+        companyId: { not: null },
+      },
       include: { company: true },
     });
     if (!jobPost?.company) return false;
@@ -56,15 +64,22 @@ export class RecruiterCompanyService implements IRecruiterCompanyService {
   // Xóa công ty nếu không còn job post nào
   async deleteMyCompany(employerId: string): Promise<boolean> {
     const jobPost = await this.prisma.jobPost.findFirst({
-      where: { employerId, companyId: { not: null } },
+      where: {
+        employerId,
+        deletedAt: null,
+        companyId: { not: null },
+      },
       include: { company: true },
     });
     if (!jobPost?.company) return false;
     const count = await this.prisma.jobPost.count({
-      where: { companyId: jobPost.company.id },
+      where: { companyId: jobPost.company.id, deletedAt: null },
     });
     if (count > 0) return false;
-    await this.prisma.company.delete({ where: { id: jobPost.company.id } });
+    await this.prisma.company.update({
+      where: { id: jobPost.company.id },
+      data: { deletedAt: new Date() },
+    });
     return true;
   }
 

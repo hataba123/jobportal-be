@@ -29,9 +29,19 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const userId = payload.userId || payload.sub;
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, role: true, passwordVersion: true },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        passwordVersion: true,
+        deletedAt: true,
+      },
     });
-    if (!user || user.passwordVersion !== (payload.passwordVersion ?? 0)) {
+    if (
+      !user ||
+      user.deletedAt ||
+      user.passwordVersion !== (payload.passwordVersion ?? 0)
+    ) {
       throw new UnauthorizedException('Phiên đăng nhập đã hết hạn.');
     }
 

@@ -11,14 +11,18 @@ export class CompanyService implements ICompanyService {
   // Lấy tất cả công ty
   // Lấy tất cả công ty, ép null về undefined cho các trường nullable
   async getAllCompanies(): Promise<CompanyDto[]> {
-    const companies = await this.prisma.company.findMany();
+    const companies = await this.prisma.company.findMany({
+      where: { deletedAt: null },
+    });
     return companies.map((c) => this.toDto(c));
   }
 
   // Lấy chi tiết công ty
   // Lấy chi tiết công ty, ép null về undefined cho các trường nullable
   async getCompanyById(id: string): Promise<CompanyDto | null> {
-    const c = await this.prisma.company.findUnique({ where: { id } });
+    const c = await this.prisma.company.findFirst({
+      where: { id, deletedAt: null },
+    });
     return c ? this.toDto(c) : null;
   }
 
@@ -60,7 +64,9 @@ export class CompanyService implements ICompanyService {
   // Cập nhật công ty
   // Cập nhật công ty, chuẩn hóa tags về string nếu FE gửi lên là mảng
   async updateCompany(id: string, dto: UpdateCompanyDto): Promise<boolean> {
-    const c = await this.prisma.company.findUnique({ where: { id } });
+    const c = await this.prisma.company.findFirst({
+      where: { id, deletedAt: null },
+    });
     if (!c) return false;
     // Nếu FE gửi tags là mảng, convert về string trước khi update
     let data: any = { ...dto };
@@ -73,9 +79,21 @@ export class CompanyService implements ICompanyService {
 
   // Xóa công ty
   async deleteCompany(id: string): Promise<boolean> {
-    const c = await this.prisma.company.findUnique({ where: { id } });
+    const c = await this.prisma.company.findFirst({
+      where: { id, deletedAt: null },
+    });
     if (!c) return false;
-    await this.prisma.company.delete({ where: { id } });
+    const deletedAt = new Date();
+    await this.prisma.$transaction([
+      this.prisma.company.update({
+        where: { id },
+        data: { deletedAt },
+      }),
+      this.prisma.jobPost.updateMany({
+        where: { companyId: id, deletedAt: null },
+        data: { deletedAt, status: 'Closed' },
+      }),
+    ]);
     return true;
   }
 }

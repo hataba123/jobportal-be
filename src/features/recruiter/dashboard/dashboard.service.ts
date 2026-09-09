@@ -16,7 +16,7 @@ export class RecruiterDashboardService implements IRecruiterDashboardService {
   async getDashboard(recruiterId: string): Promise<RecruiterDashboardDto> {
     // Lấy danh sách jobPost và số lượng applicant cho từng jobPost
     const jobPosts = await this.prisma.jobPost.findMany({
-      where: { employerId: recruiterId },
+      where: { employerId: recruiterId, deletedAt: null },
       orderBy: { createdAt: 'desc' },
     });
 

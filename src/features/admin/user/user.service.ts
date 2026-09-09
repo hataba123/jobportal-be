@@ -11,13 +11,17 @@ export class UserService implements IUserService {
 
   // Lấy tất cả user
   async getAllUsers(): Promise<UserDto[]> {
-    const users = await this.prisma.user.findMany();
+    const users = await this.prisma.user.findMany({
+      where: { deletedAt: null },
+    });
     return users.map((u) => this.toDto(u));
   }
 
   // Lấy user theo id
   async getUserById(id: string): Promise<UserDto | null> {
-    const u = await this.prisma.user.findUnique({ where: { id } });
+    const u = await this.prisma.user.findFirst({
+      where: { id, deletedAt: null },
+    });
     return u ? this.toDto(u) : null;
   }
 
@@ -38,6 +42,10 @@ export class UserService implements IUserService {
   // Cập nhật user
   async updateUser(id: string, dto: UpdateUserDto): Promise<boolean> {
     try {
+      const existing = await this.prisma.user.findFirst({
+        where: { id, deletedAt: null },
+      });
+      if (!existing) return false;
       const u = await this.prisma.user.update({ where: { id }, data: dto });
       return !!u;
     } catch {
@@ -48,7 +56,29 @@ export class UserService implements IUserService {
   // Xóa user
   async deleteUser(id: string): Promise<boolean> {
     try {
-      const u = await this.prisma.user.delete({ where: { id } });
+      const existing = await this.prisma.user.findFirst({
+        where: { id, deletedAt: null },
+      });
+      if (!existing) return false;
+      const deletedAt = new Date();
+      const u = await this.prisma.$transaction(async (tx) => {
+        const updated = await tx.user.update({
+          where: { id },
+          data: {
+            deletedAt,
+            passwordVersion: { increment: 1 },
+          },
+        });
+        await tx.jobPost.updateMany({
+          where: { employerId: id, deletedAt: null },
+          data: { deletedAt, status: 'Closed' },
+        });
+        await tx.company.updateMany({
+          where: { userId: id, deletedAt: null },
+          data: { deletedAt },
+        });
+        return updated;
+      });
       return !!u;
     } catch {
       return false;

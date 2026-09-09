@@ -63,7 +63,8 @@ export class AuthService implements IAuthService {
     const user = await this.prisma.user.findUnique({
       where: { email: request.email },
     });
-    if (!user) throw new BadRequestException('Tài khoản không tồn tại.');
+    if (!user || user.deletedAt)
+      throw new BadRequestException('Tài khoản không tồn tại.');
     const valid = await bcrypt.compare(request.password, user.passwordHash);
     if (!valid) throw new BadRequestException('Email hoặc mật khẩu không đúng.');
     // Đảm bảo role trong JWT là số (enum index)
@@ -90,6 +91,9 @@ export class AuthService implements IAuthService {
     });
 
     let user = existingAccount?.user;
+    if (user?.deletedAt) {
+      throw new UnauthorizedException('Tài khoản đã bị vô hiệu hóa.');
+    }
     if (!user) {
       const existingEmail = await this.prisma.user.findUnique({
         where: { email: request.email },
@@ -152,7 +156,7 @@ export class AuthService implements IAuthService {
   // Lấy user theo email, trả về UserDto với role là số (enum index)
   async getUserByEmailAsync(email: string): Promise<UserDto | null> {
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) return null;
+    if (!user || user.deletedAt) return null;
     return {
       id: user.id,
       email: user.email,
@@ -166,7 +170,8 @@ export class AuthService implements IAuthService {
     request: ChangePasswordRequestDto,
   ): Promise<void> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new UnauthorizedException('Tài khoản không tồn tại.');
+    if (!user || user.deletedAt)
+      throw new UnauthorizedException('Tài khoản không tồn tại.');
 
     const valid = await bcrypt.compare(request.currentPassword, user.passwordHash);
     if (!valid) throw new BadRequestException('Mật khẩu hiện tại không đúng.');
@@ -180,7 +185,7 @@ export class AuthService implements IAuthService {
 
   async createPasswordResetRequest(email: string): Promise<void> {
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) return;
+    if (!user || user.deletedAt) return;
 
     const rawToken = randomBytes(32).toString('hex');
     const tokenHash = this.hashResetToken(rawToken);
@@ -215,7 +220,7 @@ export class AuthService implements IAuthService {
       }
 
       const user = await tx.user.findUnique({ where: { id: resetToken.userId } });
-      if (!user || user.email !== request.email) {
+      if (!user || user.deletedAt || user.email !== request.email) {
         throw new BadRequestException('Mã đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.');
       }
 

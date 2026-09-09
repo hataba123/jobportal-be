@@ -10,13 +10,17 @@ export class JobPostService implements IJobPostService {
 
   // Lấy tất cả job post
   async getAllJobPosts(): Promise<JobPostDto[]> {
-    const jobs = await this.prisma.jobPost.findMany();
+    const jobs = await this.prisma.jobPost.findMany({
+      where: { deletedAt: null },
+    });
     return jobs.map((j) => this.toDto(j));
   }
 
   // Lấy chi tiết job post
   async getJobPostById(id: string): Promise<JobPostDto | null> {
-    const j = await this.prisma.jobPost.findUnique({ where: { id } });
+    const j = await this.prisma.jobPost.findFirst({
+      where: { id, deletedAt: null },
+    });
     return j ? this.toDto(j) : null;
   }
 
@@ -40,6 +44,10 @@ export class JobPostService implements IJobPostService {
       ...dto,
       tags: Array.isArray(dto.tags) ? JSON.stringify(dto.tags) : dto.tags,
       };
+      const existing = await this.prisma.jobPost.findFirst({
+        where: { id, deletedAt: null },
+      });
+      if (!existing) return false;
       const j = await this.prisma.jobPost.update({ where: { id }, data });
       return !!j;
     } catch {
@@ -50,7 +58,14 @@ export class JobPostService implements IJobPostService {
   // Xóa job post
   async deleteJobPost(id: string): Promise<boolean> {
     try {
-      const j = await this.prisma.jobPost.delete({ where: { id } });
+      const existing = await this.prisma.jobPost.findFirst({
+        where: { id, deletedAt: null },
+      });
+      if (!existing) return false;
+      const j = await this.prisma.jobPost.update({
+        where: { id },
+        data: { deletedAt: new Date(), status: 'Closed' },
+      });
       return !!j;
     } catch {
       return false;

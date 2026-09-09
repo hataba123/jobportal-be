@@ -31,6 +31,7 @@ export class MatchingService {
 
     const jobs = await this.prisma.jobPost.findMany({
       where: {
+        deletedAt: null,
         status: 'Active',
         OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
@@ -61,7 +62,9 @@ export class MatchingService {
     isAdmin: boolean,
     query: MatchQueryDto,
   ): Promise<PagedMatchesDto> {
-    const job = await this.prisma.jobPost.findUnique({ where: { id: jobPostId } });
+    const job = await this.prisma.jobPost.findFirst({
+      where: { id: jobPostId, deletedAt: null },
+    });
     if (!job) throw new NotFoundException('Không tìm thấy tin tuyển dụng.');
     if (!isAdmin && job.employerId !== actorId) {
       throw new ForbiddenException('Bạn không có quyền xem xếp hạng tin này.');
@@ -106,7 +109,9 @@ export class MatchingService {
     candidateId: string,
     isAdmin: boolean,
   ): Promise<MatchResultDto> {
-    const job = await this.prisma.jobPost.findUnique({ where: { id: jobPostId } });
+    const job = await this.prisma.jobPost.findFirst({
+      where: { id: jobPostId, deletedAt: null },
+    });
     if (!job) throw new NotFoundException('Không tìm thấy tin tuyển dụng.');
     if (!isAdmin && job.employerId !== actorId) {
       throw new ForbiddenException('Bạn không có quyền xem xếp hạng tin này.');
