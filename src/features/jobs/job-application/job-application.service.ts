@@ -3,6 +3,7 @@
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { FileUtil } from '../../../common/utils/file.util';
@@ -15,11 +16,15 @@ import {
   JobAppliedDto,
 } from './job-application.dto';
 import { ApplyStatus } from '@prisma/client';
+import { NotificationService } from '../../user/notification/notification.service';
 
 // Service xử lý logic ứng tuyển việc làm
 @Injectable()
 export class JobApplicationService implements IJobApplicationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly notifications?: NotificationService,
+  ) {}
 
   // Ứng viên ứng tuyển vào job
   async applyToJob(
@@ -77,6 +82,17 @@ export class JobApplicationService implements IJobApplicationService {
         appliedAt: new Date(),
         status: ApplyStatus.Pending,
       },
+    });
+
+    await this.notifications?.create({
+      userId: jobPost.employerId,
+      message: `Có ứng viên mới cho tin "${jobPost.title}".`,
+      type: 'application_created',
+    });
+    await this.notifications?.create({
+      userId: candidateId,
+      message: `Đã nhận hồ sơ ứng tuyển cho tin "${jobPost.title}".`,
+      type: 'application_confirmation',
     });
   }
 
@@ -199,6 +215,11 @@ export class JobApplicationService implements IJobApplicationService {
     await this.prisma.job.update({
       where: { id },
       data: { status: status as ApplyStatus },
+    });
+    await this.notifications?.create({
+      userId: application.candidateId,
+      message: `Trạng thái hồ sơ cho tin "${application.jobPost.title}" đã chuyển thành ${status}.`,
+      type: 'application_status_changed',
     });
     return true;
   }
