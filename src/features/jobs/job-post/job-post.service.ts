@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../../../prisma/prisma.service';
 import { CreateJobPostDto, UpdateJobPostDto } from './job-post.dto';
 import { IJobPostService } from './job-post.iservice';
+import { PagedResult } from '../../../common/dto/pagination.dto';
 
 @Injectable()
 // Service xử lý logic job post
@@ -114,15 +115,27 @@ export class JobPostService implements IJobPostService {
   }
 
   // Lấy tất cả job post
-  async getAll(): Promise<any[]> {
-    const jobs = await this.prisma.jobPost.findMany({
-      where: {
-        status: 'Active',
-        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    return jobs.map(this.parseTags);
+  async getAll(page = 1, pageSize = 20): Promise<PagedResult<any>> {
+    const where = {
+      status: 'Active' as const,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+    };
+    const [total, jobs] = await Promise.all([
+      this.prisma.jobPost.count({ where }),
+      this.prisma.jobPost.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+    return {
+      items: jobs.map(this.parseTags),
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
   }
 
   // Hàm parse tags từ string sang mảng (fix lỗi FE .map, chống lỗi JSON.parse)

@@ -19,6 +19,7 @@ describe('JobPostService', () => {
               delete: jest.fn(),
               findUnique: jest.fn(),
               findMany: jest.fn(),
+              count: jest.fn(),
             },
           },
         },

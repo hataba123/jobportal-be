@@ -7,6 +7,7 @@
   Param,
   Body,
   Req,
+  Query,
   UseGuards,
   NotFoundException,
 } from '@nestjs/common';
@@ -17,6 +18,7 @@ import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { UserRoleEnum } from '../../../features/auth/auth.dto';
+import { PageQueryDto } from '../../../common/dto/pagination.dto';
 
 // Controller quản lý job post
 @ApiTags('JobPost')
@@ -69,8 +71,8 @@ export class JobPostController {
 
   // Lấy tất cả job post
   @Get()
-  async getAll() {
-    return this.jobPostService.getAll();
+  async getAll(@Query() query: PageQueryDto) {
+    return this.jobPostService.getAll(query.page, query.pageSize);
   }
 
   // Lấy job post theo employer

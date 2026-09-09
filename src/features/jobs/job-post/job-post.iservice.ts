@@ -4,6 +4,6 @@ export interface IJobPostService {
   update(id: string, employerId: string, dto: any): Promise<any>;
   delete(id: string, employerId: string): Promise<boolean>;
   getById(id: string): Promise<any>;
-  getAll(): Promise<any[]>;
+  getAll(page?: number, pageSize?: number): Promise<any>;
   getByEmployer(employerId: string): Promise<any[]>;
 }
