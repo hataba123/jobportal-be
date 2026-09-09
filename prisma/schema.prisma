@@ -35,6 +35,7 @@ model User {
   fullName   String
   createdAt  DateTime    @default(now())
   role       UserRole    @default(Candidate)
+  passwordVersion Int    @default(0)
   // Quan hệ
   candidateProfile CandidateProfile?
   jobPosts    JobPost[]  @relation("EmployerJobs")
@@ -43,6 +44,7 @@ model User {
   reviews     Review[]
   savedJobs   SavedJob[]
   oauthAccounts OAuthAccount[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model OAuthAccount {
@@ -55,6 +57,18 @@ model OAuthAccount {
 
   @@unique([provider, providerAccountId])
   @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique @db.VarChar(128)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
 }
 
 /// Bảng blog

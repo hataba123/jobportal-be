@@ -18,6 +18,7 @@ import {
   IsUUID,
   IsNumber,
   ValidateIf,
+  MinLength,
 } from 'class-validator';
 
 // DTO đăng ký tài khoản
@@ -49,6 +50,36 @@ export class LoginRequestDto {
 
   @IsString()
   password: string;
+}
+
+export class ChangePasswordRequestDto {
+  @IsString()
+  @IsNotEmpty()
+  currentPassword: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(8)
+  newPassword: string;
+}
+
+export class ForgotPasswordRequestDto {
+  @IsEmail()
+  email: string;
+}
+
+export class ResetPasswordRequestDto {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  token: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(8)
+  newPassword: string;
 }
 
 // DTO đăng nhập OAuth

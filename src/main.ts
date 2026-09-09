@@ -47,7 +47,12 @@ async function bootstrap(): Promise<void> {
       },
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       credentials: true,
-      allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
+      allowedHeaders: [
+        'Content-Type',
+        'Accept',
+        'Authorization',
+        'X-OAuth-Exchange-Secret',
+      ],
     });
 
     if (!process.env.JWT_SECRET || !process.env.OAUTH_EXCHANGE_SECRET) {

@@ -18,6 +18,9 @@ import {
   AuthResponseDto,
   UserDto,
   UserRoleStringToIndex,
+  ChangePasswordRequestDto,
+  ForgotPasswordRequestDto,
+  ResetPasswordRequestDto,
 } from './auth.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
@@ -124,10 +127,39 @@ export class AuthController {
     @Headers('x-oauth-exchange-secret') exchangeSecret?: string,
   ): Promise<AuthResponseDto> {
     try {
-      return this.authService.oauthLoginAsync(request, exchangeSecret);
+      return await this.authService.oauthLoginAsync(request, exchangeSecret);
     } catch (e) {
       throw new HttpException(e.message, HttpStatus.BAD_REQUEST);
     }
+  }
+
+  @Post('change-password')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  async changePassword(
+    @Req() req,
+    @Body() request: ChangePasswordRequestDto,
+  ): Promise<{ message: string }> {
+    await this.authService.changePasswordAsync(req.user.userId, request);
+    return { message: 'Đổi mật khẩu thành công.' };
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(
+    @Body() request: ForgotPasswordRequestDto,
+  ): Promise<{ message: string }> {
+    await this.authService.createPasswordResetRequest(request.email);
+    return {
+      message: 'Nếu email tồn tại, hướng dẫn đặt lại mật khẩu sẽ được gửi.',
+    };
+  }
+
+  @Post('reset-password')
+  async resetPassword(
+    @Body() request: ResetPasswordRequestDto,
+  ): Promise<{ message: string }> {
+    await this.authService.resetPasswordAsync(request);
+    return { message: 'Đặt lại mật khẩu thành công.' };
   }
 
   // Hàm mapping role string sang index enum, throw nếu không hợp lệ
