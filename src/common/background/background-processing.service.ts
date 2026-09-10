@@ -25,16 +25,13 @@ export class BackgroundProcessingService implements OnModuleInit, OnModuleDestro
     if (this.running) return;
     this.running = true;
     try {
-      const locked = await this.prisma.$queryRaw<Array<{ locked: boolean }>>`SELECT pg_try_advisory_lock(hashtext('jobportal-background')) AS locked`;
-      if (!locked[0]?.locked) return;
-      try {
-        await this.processOutbox();
-        await this.expireJobsAndPayments();
-        await this.queueInterviewReminders();
-        await this.queueNewsletter();
-      } finally {
-        await this.prisma.$queryRaw`SELECT pg_advisory_unlock(hashtext('jobportal-background'))`;
-      }
+      // The advisory lock is acquired only while claiming a batch below. It
+      // must not be held while an email provider is called; that would keep a
+      // database transaction/connection open during an external request.
+      await this.processOutbox();
+      await this.expireJobsAndPayments();
+      await this.queueInterviewReminders();
+      await this.queueNewsletter();
     } catch (error) {
       this.logger.error(`Background cycle thất bại: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
@@ -44,13 +41,41 @@ export class BackgroundProcessingService implements OnModuleInit, OnModuleDestro
 
   private async processOutbox() {
     const now = new Date();
-    const messages = await this.prisma.outboxMessage.findMany({ where: { processedAt: null, deadLetteredAt: null, attempts: { lt: 10 }, OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: now } }] }, orderBy: { occurredAt: 'asc' }, take: 50 });
+    const messages = await this.prisma.$transaction(async (tx) => {
+      const locked = await tx.$queryRaw<Array<{ locked: boolean }>>`SELECT pg_try_advisory_xact_lock(hashtext('jobportal-background')) AS locked`;
+      if (!locked[0]?.locked) return null;
+
+      const candidates = await tx.outboxMessage.findMany({
+        where: {
+          processedAt: null,
+          deadLetteredAt: null,
+          attempts: { lt: 10 },
+          OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: now } }],
+        },
+        orderBy: { occurredAt: 'asc' },
+        take: 50,
+      });
+      const leaseUntil = new Date(now.getTime() + 5 * 60_000);
+      const claimed: typeof candidates = [];
+      for (const candidate of candidates) {
+        const result = await tx.outboxMessage.updateMany({
+          where: {
+            id: candidate.id,
+            processedAt: null,
+            deadLetteredAt: null,
+            attempts: candidate.attempts,
+          },
+          data: { attempts: { increment: 1 }, nextAttemptAt: leaseUntil },
+        });
+        if (result.count === 1) claimed.push(candidate);
+      }
+      return claimed;
+    }) ?? [];
+
     for (const message of messages) {
-      const claim = await this.prisma.outboxMessage.updateMany({ where: { id: message.id, processedAt: null, deadLetteredAt: null, attempts: message.attempts }, data: { attempts: { increment: 1 } } });
-      if (claim.count !== 1) continue;
       try {
         await this.handleMessage(message.type, message.id, message.payload as any);
-        await this.prisma.outboxMessage.update({ where: { id: message.id }, data: { processedAt: new Date(), lastError: null } });
+        await this.prisma.outboxMessage.update({ where: { id: message.id }, data: { processedAt: new Date(), nextAttemptAt: null, lastError: null } });
         this.logger.log(`Outbox processed message=${message.id} type=${message.type}`);
       } catch (error) {
         const attempts = message.attempts + 1;
