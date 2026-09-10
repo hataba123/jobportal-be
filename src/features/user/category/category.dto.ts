@@ -13,3 +13,26 @@ export class CategoryDto {
   @IsOptional()
   color?: string;
 }
+
+export class CreateCategoryDto {
+  @IsString()
+  name: string;
+  @IsString()
+  @IsOptional()
+  icon?: string;
+  @IsString()
+  @IsOptional()
+  color?: string;
+}
+
+export class UpdateCategoryDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+  @IsString()
+  @IsOptional()
+  icon?: string;
+  @IsString()
+  @IsOptional()
+  color?: string;
+}
