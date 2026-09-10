@@ -377,7 +377,12 @@ export class JobApplicationService implements IJobApplicationService {
     } else if (!reason?.trim()) {
       throw new BadRequestException('Admin override bắt buộc phải có lý do.');
     }
-    if (application.status === nextStatus) return true;
+    if (application.status === nextStatus) {
+      if (application.version !== expectedVersion) {
+        throw concurrencyConflict(application.version);
+      }
+      return true;
+    }
     await this.prisma.$transaction(async (tx) => {
       const updated = await tx.job.updateMany({
         where: { id, ...(expectedVersion === undefined ? {} : { version: expectedVersion }) },

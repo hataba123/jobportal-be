@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { Prisma, PrismaClient } from '@prisma/client';
 
 type PrismaTransaction = Prisma.TransactionClient | PrismaClient;
-const SENSITIVE = /password|token|secret|signature|cv|resume|storage|path/i;
+const SENSITIVE = /password|token|secret|signature|payment|cv|resume|storage|path/i;
+const MAX_AUDIT_JSON_LENGTH = 100_000;
 
 @Injectable()
 export class AuditLogService {
@@ -46,6 +47,14 @@ export class AuditLogService {
       }
       return item;
     };
-    return visit(value) as Prisma.InputJsonValue;
+    const sanitized = visit(value) as Prisma.InputJsonValue;
+    try {
+      if (JSON.stringify(sanitized).length > MAX_AUDIT_JSON_LENGTH) {
+        return { truncated: true };
+      }
+    } catch {
+      return { truncated: true };
+    }
+    return sanitized;
   }
 }
