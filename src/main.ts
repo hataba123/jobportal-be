@@ -57,7 +57,10 @@ async function bootstrap(): Promise<void> {
         'Accept',
         'Authorization',
         'X-OAuth-Exchange-Secret',
+        'If-Match',
+        'X-Correlation-ID',
       ],
+      exposedHeaders: ['ETag', 'X-Correlation-ID'],
     });
 
     if (!process.env.JWT_SECRET || !process.env.OAUTH_EXCHANGE_SECRET) {

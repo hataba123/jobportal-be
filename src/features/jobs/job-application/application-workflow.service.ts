@@ -33,7 +33,6 @@ export class ApplicationWorkflowService {
     }
     const valid =
       (from === ApplyStatus.Applied && to === ApplyStatus.Screening) ||
-      (from === ApplyStatus.Interview && to === ApplyStatus.Offer) ||
       (from === ApplyStatus.Offer && to === ApplyStatus.Hired) ||
       (([ApplyStatus.Applied, ApplyStatus.Screening, ApplyStatus.Interview, ApplyStatus.Offer] as ApplyStatus[]).includes(from) &&
         to === ApplyStatus.Rejected);

@@ -186,7 +186,7 @@ export class InterviewService {
       jobTitle: item.application.jobPost.title, type: item.type, startAt: item.startAt, endAt: item.endAt,
       location: item.location, meetingUrl: item.meetingUrl, interviewerId: item.interviewerId,
       status: item.status, result: item.result, notes: item.notes, createdAt: item.createdAt,
-      updatedAt: item.updatedAt, version: encodeVersion(item.version),
+      updatedAt: item.updatedAt, version: encodeVersion(item.version), applicationVersion: encodeVersion(item.application.version),
     };
   }
 }
