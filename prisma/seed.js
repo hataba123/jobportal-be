@@ -7,7 +7,15 @@ const ids = {
   admin: '00000000-0000-0000-0000-000000000001',
   recruiter: '00000000-0000-0000-0000-000000000002',
   candidate: '00000000-0000-0000-0000-000000000003',
+  recruiterSecond: '00000000-0000-0000-0000-000000000004',
+  candidateSecond: '00000000-0000-0000-0000-000000000005',
+  candidateThird: '00000000-0000-0000-0000-000000000006',
+  candidateFourth: '00000000-0000-0000-0000-000000000007',
   category: '10000000-0000-0000-0000-000000000001',
+  categoryFrontend: '10000000-0000-0000-0000-000000000002',
+  categoryData: '10000000-0000-0000-0000-000000000003',
+  categoryDevops: '10000000-0000-0000-0000-000000000004',
+  categoryMobile: '10000000-0000-0000-0000-000000000005',
   company: '20000000-0000-0000-0000-000000000001',
   companyMicrosoft: '20000000-0000-0000-0000-000000000002',
   companyGoogle: '20000000-0000-0000-0000-000000000003',
@@ -15,6 +23,11 @@ const ids = {
   companyGithub: '20000000-0000-0000-0000-000000000005',
   companyApple: '20000000-0000-0000-0000-000000000006',
   jobPost: '30000000-0000-0000-0000-000000000001',
+  jobPostFrontend: '30000000-0000-0000-0000-000000000002',
+  jobPostData: '30000000-0000-0000-0000-000000000003',
+  jobPostDevops: '30000000-0000-0000-0000-000000000004',
+  jobPostMobile: '30000000-0000-0000-0000-000000000005',
+  jobPostProduct: '30000000-0000-0000-0000-000000000006',
   plan: '40000000-0000-0000-0000-000000000001',
 };
 
@@ -74,9 +87,34 @@ async function main() {
     },
   });
 
+  const extraCategories = [
+    { id: ids.categoryFrontend, name: 'Frontend & UI', icon: 'layout', color: '#7c3aed' },
+    { id: ids.categoryData, name: 'Dữ liệu & AI', icon: 'database', color: '#0891b2' },
+    { id: ids.categoryDevops, name: 'DevOps & Cloud', icon: 'cloud', color: '#ea580c' },
+    { id: ids.categoryMobile, name: 'Mobile', icon: 'smartphone', color: '#16a34a' },
+  ];
+  for (const category of extraCategories) {
+    await prisma.category.upsert({ where: { id: category.id }, update: category, create: category });
+  }
+
   await upsertUser(ids.admin, 'seed-admin@example.test', 'Seed Admin', 'Admin', passwordHash);
   await upsertUser(ids.recruiter, 'seed-recruiter@example.test', 'Seed Recruiter', 'Recruiter', passwordHash);
   await upsertUser(ids.candidate, 'seed-candidate@example.test', 'Seed Candidate', 'Candidate', passwordHash);
+  await upsertUser(ids.recruiterSecond, 'seed-recruiter-2@example.test', 'Seed Recruiter 2', 'Recruiter', passwordHash);
+
+  const extraCandidates = [
+    { id: ids.candidateSecond, email: 'seed-candidate-2@example.test', fullName: 'Nguyễn Minh Anh', skills: 'React, TypeScript, Next.js', years: 4, education: 'Đại học Bách khoa', location: 'Hồ Chí Minh', type: 'Full-time' },
+    { id: ids.candidateThird, email: 'seed-candidate-3@example.test', fullName: 'Trần Quốc Bảo', skills: 'Python, SQL, Machine Learning', years: 3, education: 'Đại học Công nghệ', location: 'Đà Nẵng', type: 'Full-time' },
+    { id: ids.candidateFourth, email: 'seed-candidate-4@example.test', fullName: 'Lê Hoàng Nam', skills: 'AWS, Docker, Kubernetes', years: 5, education: 'Đại học FPT', location: 'Hà Nội', type: 'Remote' },
+  ];
+  for (const candidate of extraCandidates) {
+    await upsertUser(candidate.id, candidate.email, candidate.fullName, 'Candidate', passwordHash);
+    await prisma.candidateProfile.upsert({
+      where: { userId: candidate.id },
+      update: { skills: candidate.skills, experienceYears: candidate.years, education: candidate.education, preferredLocation: candidate.location, preferredJobType: candidate.type },
+      create: { userId: candidate.id, skills: candidate.skills, experienceYears: candidate.years, education: candidate.education, preferredLocation: candidate.location, preferredJobType: candidate.type },
+    });
+  }
 
   await prisma.candidateProfile.upsert({
     where: { userId: ids.candidate },
@@ -234,6 +272,43 @@ async function main() {
       logo: '/uploads/logo/jobportal-demo.svg',
     },
   });
+
+  const extraJobPosts = [
+    { id: ids.jobPostFrontend, title: 'Frontend Developer (Demo)', description: 'Xây dựng giao diện tuyển dụng tốc độ cao và thân thiện trên nhiều thiết bị.', skillsRequired: 'React, TypeScript, Next.js', location: 'Hồ Chí Minh', salary: 28000000, companyId: ids.companyGoogle, type: 'Full-time', tags: ['React', 'Next.js', 'TypeScript'], categoryId: ids.categoryFrontend, minExperienceYears: 2, educationRequirement: 'Đại học' },
+    { id: ids.jobPostData, title: 'Data Engineer (Demo)', description: 'Thiết kế pipeline dữ liệu và mô hình báo cáo cho sản phẩm công nghệ.', skillsRequired: 'Python, SQL, Airflow', location: 'Đà Nẵng', salary: 32000000, companyId: ids.companyAmazon, type: 'Full-time', tags: ['Python', 'SQL', 'Data'], categoryId: ids.categoryData, minExperienceYears: 3, educationRequirement: 'Đại học' },
+    { id: ids.jobPostDevops, title: 'Cloud DevOps Engineer (Demo)', description: 'Vận hành hạ tầng cloud an toàn, tự động hóa triển khai và giám sát hệ thống.', skillsRequired: 'AWS, Docker, Kubernetes', location: 'Remote', salary: 38000000, companyId: ids.companyMicrosoft, type: 'Remote', tags: ['AWS', 'Docker', 'Kubernetes'], categoryId: ids.categoryDevops, minExperienceYears: 4, educationRequirement: 'Đại học' },
+    { id: ids.jobPostMobile, title: 'Mobile Developer (Demo)', description: 'Phát triển trải nghiệm mobile mượt mà cho ứng dụng tìm việc JobPortal.', skillsRequired: 'Swift, iOS, REST API', location: 'Hồ Chí Minh', salary: 30000000, companyId: ids.companyApple, type: 'Full-time', tags: ['Swift', 'iOS', 'Mobile'], categoryId: ids.categoryMobile, minExperienceYears: 2, educationRequirement: 'Cao đẳng' },
+    { id: ids.jobPostProduct, title: 'Product Designer (Demo)', description: 'Thiết kế trải nghiệm người dùng và hệ thống giao diện cho nền tảng tuyển dụng.', skillsRequired: 'Figma, UX Research, Design System', location: 'Hà Nội', salary: 26000000, companyId: ids.companyGithub, type: 'Hybrid', tags: ['Figma', 'UX', 'Product'], categoryId: ids.categoryFrontend, minExperienceYears: 2, educationRequirement: 'Không bắt buộc' },
+  ];
+  for (const job of extraJobPosts) {
+    const { id, ...jobData } = job;
+    await prisma.jobPost.upsert({
+      where: { id },
+      update: { ...jobData, tags: JSON.stringify(job.tags), employerId: ids.recruiter, applicants: 0, status: 'Active', expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), deletedAt: null, logo: demoCompanies.find((company) => company.id === job.companyId)?.logo ?? '/uploads/logo/jobportal-demo.svg' },
+      create: { id, ...jobData, tags: JSON.stringify(job.tags), employerId: ids.recruiter, applicants: 0, status: 'Active', expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), logo: demoCompanies.find((company) => company.id === job.companyId)?.logo ?? '/uploads/logo/jobportal-demo.svg' },
+    });
+  }
+
+  const applications = [
+    { id: '50000000-0000-0000-0000-000000000001', jobPostId: ids.jobPost, candidateId: ids.candidate, status: 'Reviewed' },
+    { id: '50000000-0000-0000-0000-000000000002', jobPostId: ids.jobPostFrontend, candidateId: ids.candidateSecond, status: 'Accepted' },
+    { id: '50000000-0000-0000-0000-000000000003', jobPostId: ids.jobPostData, candidateId: ids.candidateThird, status: 'Pending' },
+    { id: '50000000-0000-0000-0000-000000000004', jobPostId: ids.jobPostDevops, candidateId: ids.candidateFourth, status: 'Reviewed' },
+  ];
+  for (const application of applications) {
+    await prisma.job.upsert({
+      where: { id: application.id },
+      update: { jobPostId: application.jobPostId, candidateId: application.candidateId, status: application.status, appliedAt: new Date('2026-09-01T08:00:00.000Z') },
+      create: { id: application.id, jobPostId: application.jobPostId, candidateId: application.candidateId, status: application.status, appliedAt: new Date('2026-09-01T08:00:00.000Z') },
+    });
+  }
+  await prisma.jobPost.update({ where: { id: ids.jobPost }, data: { applicants: 1 } });
+  await prisma.jobPost.update({ where: { id: ids.jobPostFrontend }, data: { applicants: 1 } });
+  await prisma.jobPost.update({ where: { id: ids.jobPostData }, data: { applicants: 1 } });
+  await prisma.jobPost.update({ where: { id: ids.jobPostDevops }, data: { applicants: 1 } });
+
+  await prisma.savedJob.upsert({ where: { userId_jobPostId: { userId: ids.candidate, jobPostId: ids.jobPostDevops } }, update: {}, create: { userId: ids.candidate, jobPostId: ids.jobPostDevops } });
+  await prisma.savedJob.upsert({ where: { userId_jobPostId: { userId: ids.candidateSecond, jobPostId: ids.jobPostMobile } }, update: {}, create: { userId: ids.candidateSecond, jobPostId: ids.jobPostMobile } });
 
   const blogAuthor = await upsertBlogAuthor({
     name: 'JobPortal Editorial Team',
