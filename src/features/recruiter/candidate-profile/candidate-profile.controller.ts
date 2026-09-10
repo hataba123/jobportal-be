@@ -30,6 +30,7 @@ import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
+import { PageQueryDto } from '../../../common/dto/pagination.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('api/candidate-profile')
@@ -84,17 +85,24 @@ export class RecruiterCandidateProfileController {
     const recruiterId = req.user?.['userId'];
     if (!recruiterId)
       throw new UnauthorizedException('Không xác thực được user');
-    return await this.candidateService.searchCandidates(recruiterId, query);
+    // HTTP query luôn được bind thành DTO và sử dụng paging ở database.
+    return await this.candidateService.searchCandidatesPaged(recruiterId, query);
   }
 
   // Lấy danh sách ứng viên đã ứng tuyển vào job của recruiter (phải đặt trước route có :id)
   @Get('recruiter/applied')
   @Roles('1')
-  async getCandidatesAppliedToMyJobs(@Req() req: Request) {
+  async getCandidatesAppliedToMyJobs(
+    @Req() req: Request,
+    @Query() query: CandidateSearchRequest,
+  ) {
     const recruiterId = req.user?.['userId'];
     if (!recruiterId)
       throw new UnauthorizedException('Không xác thực được user');
-    return await this.candidateService.getCandidatesForRecruiter(recruiterId);
+    return await this.candidateService.getCandidatesForRecruiterPaged(
+      recruiterId,
+      query,
+    );
   }
 
   // Lấy chi tiết ứng viên theo recruiter (route có :id phải đặt cuối)
@@ -115,14 +123,23 @@ export class RecruiterCandidateProfileController {
   // Lấy danh sách đơn ứng tuyển của ứng viên (route có :id phải đặt cuối)
   @Get('recruiter/:id/applications')
   @Roles('1')
-  async getCandidateApplications(@Req() req: Request, @Param('id') id: string) {
+  async getCandidateApplications(
+    @Req() req: Request,
+    @Param('id') id: string,
+    @Query() query?: PageQueryDto,
+  ) {
     const recruiterId = req.user?.['userId'];
     if (!recruiterId)
       throw new UnauthorizedException('Không xác thực được user');
-    return await this.candidateService.getCandidateApplications(
-      recruiterId,
-      id,
-    );
+    if (query) {
+      return this.candidateService.getCandidateApplicationsPaged(
+        recruiterId,
+        id,
+        query.page,
+        query.pageSize,
+      );
+    }
+    return await this.candidateService.getCandidateApplications(recruiterId, id);
   }
 
   @Get('recruiter/:id/cv')

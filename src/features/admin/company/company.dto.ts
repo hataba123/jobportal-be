@@ -53,6 +53,7 @@ export class CompanyDto {
   @IsEnum(CompanyVerificationStatus)
   verificationStatus: CompanyVerificationStatus;
   verifiedAt?: Date;
+  version?: string;
 }
 
 // DTO tạo mới công ty

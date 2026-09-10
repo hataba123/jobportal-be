@@ -14,6 +14,9 @@ import { CandidateProfileModule } from './features/recruiter/candidate-profile/c
 // Jobs modules
 import { JobPostModule } from './features/jobs/job-post/job-post.module';
 import { JobApplicationModule } from './features/jobs/job-application/job-application.module';
+import { InterviewModule } from './features/jobs/interview/interview.module';
+import { ReportModule } from './features/jobs/reports/report.module';
+import { NewsletterModule } from './features/user/newsletter/newsletter.module';
 
 // Admin modules
 import { UserModule } from './features/admin/user/user.module';
@@ -34,11 +37,13 @@ import { MatchingModule } from './features/matching/matching.module';
 import { PaymentModule } from './features/payments/payment.module';
 import { HealthController } from './health.controller';
 import { MediaModule } from './features/media/media.module';
+import { InfrastructureModule } from './common/infrastructure/infrastructure.module';
 
 @Module({
   imports: [
     // Core infrastructure
     PrismaModule,
+    InfrastructureModule,
     AuthModule,
 
     // Recruiter features
@@ -49,6 +54,9 @@ import { MediaModule } from './features/media/media.module';
     // Jobs features
     JobPostModule,
     JobApplicationModule,
+    InterviewModule,
+    ReportModule,
+    NewsletterModule,
 
     // Admin features
     UserModule,

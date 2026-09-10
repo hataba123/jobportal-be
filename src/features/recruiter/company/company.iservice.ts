@@ -6,6 +6,7 @@ export interface IRecruiterCompanyService {
   updateMyCompany(
     employerId: string,
     dto: RecruiterUpdateCompanyDto,
+    expectedVersion?: number,
   ): Promise<boolean>;
-  deleteMyCompany(employerId: string): Promise<boolean>;
+  deleteMyCompany(employerId: string, expectedVersion?: number): Promise<boolean>;
 }

@@ -21,7 +21,24 @@ export class JobApplicationRequest {
 // DTO cập nhật trạng thái ứng tuyển
 export class UpdateApplyStatusRequest {
   @IsString()
-  status: string;
+  @IsOptional()
+  status?: string;
+
+  @IsString()
+  @IsOptional()
+  toStatus?: string;
+
+  @IsString()
+  @IsOptional()
+  reason?: string;
+
+  @IsString()
+  @IsOptional()
+  version?: string;
+
+  get requestedStatus(): string {
+    return this.toStatus ?? this.status ?? '';
+  }
 }
 
 // DTO trả về cho admin/recruiter
@@ -42,6 +59,7 @@ export class ApplyDto {
   status: ApplyStatus | string;
   @IsDateString()
   appliedAt: Date;
+  version?: string;
 }
 
 // DTO trả về danh sách ứng viên ứng tuyển vào job
@@ -61,6 +79,7 @@ export class CandidateApplicationDto {
   cvUrl?: string;
   @IsEnum(ApplyStatus)
   status: ApplyStatus | string;
+  version?: string;
 }
 
 // DTO trả về danh sách job đã ứng tuyển
@@ -83,4 +102,5 @@ export class JobAppliedDto {
   appliedAt: Date;
   @IsEnum(ApplyStatus)
   status: ApplyStatus | string;
+  version?: string;
 }

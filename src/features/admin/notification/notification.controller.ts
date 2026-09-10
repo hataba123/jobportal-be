@@ -11,12 +11,14 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './notification.dto';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { PageQueryDto } from '../../../common/dto/pagination.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('0')
@@ -26,7 +28,8 @@ export class NotificationController {
 
   // Lấy tất cả notification
   @Get()
-  async getAll() {
+  async getAll(@Query() query?: PageQueryDto) {
+    if (query) return this.notificationService.getAllPaged(query);
     return await this.notificationService.getAll();
   }
 

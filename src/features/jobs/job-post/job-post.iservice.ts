@@ -1,8 +1,8 @@
 // Interface service quản lý job post
 export interface IJobPostService {
   create(employerId: string, dto: any): Promise<any>;
-  update(id: string, employerId: string, dto: any): Promise<any>;
-  delete(id: string, employerId: string): Promise<boolean>;
+  update(id: string, employerId: string, dto: any, expectedVersion: number): Promise<any>;
+  delete(id: string, employerId: string, expectedVersion: number): Promise<boolean>;
   getById(id: string): Promise<any>;
   getAll(page?: number, pageSize?: number): Promise<any>;
   getByEmployer(employerId: string): Promise<any[]>;

@@ -4,6 +4,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { UserDto, CreateUserDto, UpdateUserDto, UserRole } from './user.dto';
 import { IUserService } from './user.iservice';
 import * as bcrypt from 'bcryptjs';
+import { PageQueryDto, PagedResult } from '../../../common/dto/pagination.dto';
 
 @Injectable()
 export class UserService implements IUserService {
@@ -15,6 +16,49 @@ export class UserService implements IUserService {
       where: { deletedAt: null },
     });
     return users.map((u) => this.toDto(u));
+  }
+
+  async getAllUsersPaged(query: PageQueryDto): Promise<PagedResult<UserDto>> {
+    const page = Math.max(1, Number(query.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(query.pageSize) || 20));
+    const keyword = query.keyword?.trim();
+    const where: any = {
+      deletedAt: null,
+      ...(keyword
+        ? {
+            OR: [
+              { email: { contains: keyword, mode: 'insensitive' } },
+              { fullName: { contains: keyword, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    };
+    const sortFields: Record<string, string> = {
+      createdAt: 'createdAt',
+      email: 'email',
+      fullName: 'fullName',
+      role: 'role',
+    };
+    const sortBy = sortFields[query.sortBy ?? ''] ?? 'createdAt';
+    const sortDir = query.sortDir === 'asc' ? 'asc' : 'desc';
+    const [totalCount, users] = await this.prisma.$transaction([
+      this.prisma.user.count({ where }),
+      this.prisma.user.findMany({
+        where,
+        orderBy: [{ [sortBy]: sortDir }, { id: 'asc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+    const items = users.map((u) => this.toDto(u));
+    return {
+      items,
+      total: totalCount,
+      totalCount,
+      page,
+      pageSize,
+      totalPages: Math.ceil(totalCount / pageSize),
+    };
   }
 
   // Lấy user theo id

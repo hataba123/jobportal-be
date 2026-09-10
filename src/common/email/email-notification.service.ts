@@ -30,6 +30,30 @@ export class EmailNotificationService {
     });
   }
 
+  async sendInterviewInvitation(to: string, jobTitle: string, startAt: Date, meetingUrl?: string, location?: string): Promise<void> {
+    await this.send({
+      to,
+      subject: `Lời mời phỏng vấn: ${jobTitle}`,
+      text: `Bạn có lịch phỏng vấn cho vị trí "${jobTitle}" lúc ${startAt.toISOString()}. ${meetingUrl ? `Link: ${meetingUrl}` : `Địa điểm: ${location ?? ''}`}`,
+    });
+  }
+
+  async sendInterviewReminder(to: string, jobTitle: string, startAt: Date, meetingUrl?: string): Promise<void> {
+    await this.send({
+      to,
+      subject: `Nhắc lịch phỏng vấn: ${jobTitle}`,
+      text: `Lịch phỏng vấn của bạn bắt đầu lúc ${startAt.toISOString()}. ${meetingUrl ? `Link: ${meetingUrl}` : ''}`,
+    });
+  }
+
+  async sendNewsletter(to: string, titles: string[]): Promise<void> {
+    await this.send({
+      to,
+      subject: 'Việc làm mới trên JobPortal',
+      text: titles.length ? `Các tin tuyển dụng mới:\n- ${titles.join('\n- ')}` : 'Tuần này chưa có việc làm mới phù hợp.',
+    });
+  }
+
   async sendPasswordReset(to: string, token: string): Promise<void> {
     const frontendUrl = (process.env.FRONTEND_URL ?? 'http://localhost:3000').replace(/\/$/, '');
     const resetUrl = `${frontendUrl}/vi/candidate/auth/reset-password?email=${encodeURIComponent(to)}&token=${encodeURIComponent(token)}`;

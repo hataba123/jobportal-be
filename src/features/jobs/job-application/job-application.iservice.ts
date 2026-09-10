@@ -5,6 +5,7 @@ import {
   CandidateApplicationDto,
   JobAppliedDto,
 } from './job-application.dto';
+import { PageQueryDto, PagedResult } from '../../../common/dto/pagination.dto';
 
 // Interface service quản lý ứng tuyển việc làm
 export interface IJobApplicationService {
@@ -16,8 +17,15 @@ export interface IJobApplicationService {
     recruiterId: string,
     jobPostId: string,
   ): Promise<CandidateApplicationDto[]>;
+  getCandidatesForJobPaged(
+    recruiterId: string,
+    jobPostId: string,
+    query: PageQueryDto,
+  ): Promise<PagedResult<CandidateApplicationDto>>;
   getMyAppliedJobs(candidateId: string): Promise<JobAppliedDto[]>;
+  getMyAppliedJobsPaged(candidateId: string, query: PageQueryDto): Promise<PagedResult<JobAppliedDto>>;
   getAll(): Promise<ApplyDto[]>;
+  getAllPaged(query: PageQueryDto): Promise<PagedResult<ApplyDto>>;
   getById(id: string): Promise<ApplyDto | null>;
   updateStatus(id: string, status: string): Promise<boolean>;
   delete(id: string): Promise<boolean>;

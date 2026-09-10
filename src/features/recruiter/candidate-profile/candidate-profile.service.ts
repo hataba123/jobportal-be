@@ -11,6 +11,8 @@ import {
   CandidateSearchRequest,
 } from './candidate-profile.dto';
 import { IRecruiterCandidateService } from './candidate-profile.iservice';
+import { PagedResult } from '../../../common/dto/pagination.dto';
+import { encodeVersion } from '../../../common/concurrency/concurrency';
 
 @Injectable()
 export class RecruiterCandidateService implements IRecruiterCandidateService {
@@ -49,6 +51,80 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
       preferredJobType: c.preferredJobType ?? undefined,
       expectedSalary: c.expectedSalary ? Number(c.expectedSalary) : undefined,
     }));
+  }
+
+  async searchCandidatesPaged(
+    recruiterId: string,
+    request: CandidateSearchRequest,
+  ): Promise<PagedResult<CandidateProfileBriefDto>> {
+    // Recruiter ownership is enforced by the authenticated role and this
+    // endpoint only exposes candidate profiles; no client-supplied actor id is
+    // used in the query.
+    void recruiterId;
+    const page = Math.max(1, Number(request.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(request.pageSize) || 20));
+    const keyword = request.keyword?.trim();
+    const normalizedSkill = request.skill?.trim().toLowerCase();
+    const where: any = {};
+    if (keyword) {
+      where.OR = [
+        { user: { fullName: { contains: keyword, mode: 'insensitive' } } },
+        { user: { email: { contains: keyword, mode: 'insensitive' } } },
+        { skills: { contains: keyword, mode: 'insensitive' } },
+      ];
+    }
+    if (normalizedSkill) {
+      where.AND = [
+        ...(where.AND ?? []),
+        {
+          OR: [
+            { candidateSkills: { some: { normalizedName: normalizedSkill } } },
+            { skills: { contains: request.skill!.trim(), mode: 'insensitive' } },
+          ],
+        },
+      ];
+    }
+    if (request.education?.trim()) {
+      where.education = { contains: request.education.trim(), mode: 'insensitive' };
+    }
+    const experienceFrom = request.experienceFrom ?? request.minYearsExperience;
+    if (experienceFrom !== undefined) where.experienceYears = { ...(where.experienceYears ?? {}), gte: experienceFrom };
+    if (request.experienceTo !== undefined) where.experienceYears = { ...(where.experienceYears ?? {}), lte: request.experienceTo };
+    if (request.location?.trim()) {
+      where.preferredLocation = { contains: request.location.trim(), mode: 'insensitive' };
+    }
+    const sortDir = request.sortDir === 'asc' ? 'asc' : 'desc';
+    const sortBy = request.sortBy;
+    const orderBy: any[] = sortBy === 'experience'
+      ? [{ experienceYears: sortDir }, { id: 'asc' }]
+      : sortBy === 'name'
+        ? [{ user: { fullName: sortDir } }, { id: 'asc' }]
+        : sortBy === 'location'
+          ? [{ preferredLocation: sortDir }, { id: 'asc' }]
+          : [{ id: 'asc' }];
+    const [totalCount, profiles] = await this.prisma.$transaction([
+      this.prisma.candidateProfile.count({ where }),
+      this.prisma.candidateProfile.findMany({
+        where,
+        include: { user: true },
+        orderBy,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+    const items = profiles.map((c) => ({
+      id: c.id,
+      userId: c.userId,
+      fullName: c.user.fullName,
+      skills: c.skills ?? undefined,
+      experience: c.experience ?? undefined,
+      experienceYears: c.experienceYears ?? undefined,
+      education: c.education ?? undefined,
+      preferredLocation: c.preferredLocation ?? undefined,
+      preferredJobType: c.preferredJobType ?? undefined,
+      expectedSalary: c.expectedSalary ? Number(c.expectedSalary) : undefined,
+    }));
+    return { items, total: totalCount, totalCount, page, pageSize, totalPages: Math.ceil(totalCount / pageSize) };
   }
 
   // Lấy chi tiết ứng viên theo recruiter
@@ -117,6 +193,37 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
     }));
   }
 
+  async getCandidateApplicationsPaged(
+    recruiterId: string,
+    candidateId: string,
+    requestedPage: number,
+    requestedPageSize: number,
+  ): Promise<PagedResult<CandidateApplicationDto>> {
+    const page = Math.max(1, Number(requestedPage) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(requestedPageSize) || 20));
+    const where = { candidateId, jobPost: { employerId: recruiterId } };
+    const [totalCount, jobs] = await this.prisma.$transaction([
+      this.prisma.job.count({ where }),
+      this.prisma.job.findMany({
+        where,
+        include: { jobPost: true },
+        orderBy: [{ appliedAt: 'desc' }, { id: 'asc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+    const items = jobs.map((j) => ({
+      jobId: j.id,
+      jobPostId: j.jobPostId,
+      jobTitle: j.jobPost.title,
+      appliedAt: j.appliedAt,
+      cvUrl: j.cvUrl ? `/api/candidate-profile/recruiter/${candidateId}/cv` : '',
+      status: j.status,
+      version: encodeVersion(j.version),
+    }));
+    return { items, total: totalCount, totalCount, page, pageSize, totalPages: Math.ceil(totalCount / pageSize) };
+  }
+
   // Lấy danh sách ứng viên đã ứng tuyển vào job của recruiter
   // Lấy danh sách ứng viên đã ứng tuyển vào job của recruiter
   async getCandidatesForRecruiter(
@@ -146,6 +253,62 @@ export class RecruiterCandidateService implements IRecruiterCandidateService {
       preferredJobType: c.preferredJobType ?? undefined,
       expectedSalary: c.expectedSalary ? Number(c.expectedSalary) : undefined,
     }));
+  }
+
+  async getCandidatesForRecruiterPaged(
+    recruiterId: string,
+    request: CandidateSearchRequest,
+  ): Promise<PagedResult<CandidateProfileBriefDto>> {
+    const page = Math.max(1, Number(request.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(request.pageSize) || 20));
+    const keyword = request.keyword?.trim();
+    const where: any = {
+      user: { jobs: { some: { jobPost: { employerId: recruiterId } } } },
+    };
+    if (keyword) {
+      where.AND = [{ OR: [
+        { user: { fullName: { contains: keyword, mode: 'insensitive' } } },
+        { user: { email: { contains: keyword, mode: 'insensitive' } } },
+        { skills: { contains: keyword, mode: 'insensitive' } },
+      ] }];
+    }
+    if (request.skill?.trim()) {
+      where.AND = [...(where.AND ?? []), { skills: { contains: request.skill.trim(), mode: 'insensitive' } }];
+    }
+    if (request.education?.trim()) where.education = { contains: request.education.trim(), mode: 'insensitive' };
+    const experienceFrom = request.experienceFrom ?? request.minYearsExperience;
+    if (experienceFrom !== undefined) where.experienceYears = { gte: experienceFrom };
+    if (request.experienceTo !== undefined) where.experienceYears = { ...(where.experienceYears ?? {}), lte: request.experienceTo };
+    if (request.location?.trim()) where.preferredLocation = { contains: request.location.trim(), mode: 'insensitive' };
+    const sortDir = request.sortDir === 'asc' ? 'asc' : 'desc';
+    const orderBy: any[] = request.sortBy === 'experience'
+      ? [{ experienceYears: sortDir }, { id: 'asc' }]
+      : request.sortBy === 'name'
+        ? [{ user: { fullName: sortDir } }, { id: 'asc' }]
+        : [{ id: 'asc' }];
+    const [totalCount, profiles] = await this.prisma.$transaction([
+      this.prisma.candidateProfile.count({ where }),
+      this.prisma.candidateProfile.findMany({
+        where,
+        include: { user: true },
+        orderBy,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+    const items = profiles.map((c) => ({
+      id: c.id,
+      userId: c.userId,
+      fullName: c.user.fullName,
+      skills: c.skills ?? undefined,
+      experience: c.experience ?? undefined,
+      experienceYears: c.experienceYears ?? undefined,
+      education: c.education ?? undefined,
+      preferredLocation: c.preferredLocation ?? undefined,
+      preferredJobType: c.preferredJobType ?? undefined,
+      expectedSalary: c.expectedSalary ? Number(c.expectedSalary) : undefined,
+    }));
+    return { items, total: totalCount, totalCount, page, pageSize, totalPages: Math.ceil(totalCount / pageSize) };
   }
 
   // Lấy profile ứng viên theo userId

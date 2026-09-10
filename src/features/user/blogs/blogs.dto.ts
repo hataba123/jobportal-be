@@ -77,6 +77,8 @@ export class BlogResponseDto {
   @IsInt()
   total: number;
   @IsInt()
+  totalCount: number;
+  @IsInt()
   page: number;
   @IsInt()
   limit: number;

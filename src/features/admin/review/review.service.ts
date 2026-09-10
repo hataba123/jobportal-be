@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { ReviewDto, UpdateReviewDto } from './review.dto';
 import { IReviewService } from './review.iservice';
+import { PageQueryDto, PagedResult } from '../../../common/dto/pagination.dto';
 
 @Injectable()
 export class ReviewService implements IReviewService {
@@ -12,6 +13,29 @@ export class ReviewService implements IReviewService {
   async getAllReviews(): Promise<ReviewDto[]> {
     const reviews = await this.prisma.review.findMany();
     return reviews.map((r) => this.toDto(r));
+  }
+
+  async getAllReviewsPaged(query: PageQueryDto): Promise<PagedResult<ReviewDto>> {
+    const page = Math.max(1, Number(query.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(query.pageSize) || 20));
+    const keyword = query.keyword?.trim();
+    const where: any = keyword
+      ? { comment: { contains: keyword, mode: 'insensitive' } }
+      : {};
+    const sortFields: Record<string, string> = { createdAt: 'createdAt', rating: 'rating' };
+    const sortBy = sortFields[query.sortBy ?? ''] ?? 'createdAt';
+    const sortDir = query.sortDir === 'asc' ? 'asc' : 'desc';
+    const [totalCount, reviews] = await this.prisma.$transaction([
+      this.prisma.review.count({ where }),
+      this.prisma.review.findMany({
+        where,
+        orderBy: [{ [sortBy]: sortDir }, { id: 'asc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+    const items = reviews.map((r) => this.toDto(r));
+    return { items, total: totalCount, totalCount, page, pageSize, totalPages: Math.ceil(totalCount / pageSize) };
   }
 
   // Lấy review theo id

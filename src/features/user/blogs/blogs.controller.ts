@@ -9,10 +9,15 @@ import {
   Body,
   Query,
   NotFoundException,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { BlogService } from './blogs.service';
 import { BlogSearchDto, CreateBlogDto, UpdateBlogDto } from './blogs.dto';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../common/guards/roles.guard';
+import { AdminOnly, Roles } from '../../../common/decorators/roles.decorator';
 
 @ApiTags('Blogs')
 @Controller('api/blogs')
@@ -48,6 +53,8 @@ export class BlogsController {
   }
 
   // Tạo blog mới
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @AdminOnly()
   @Post()
   async createBlog(@Body() createDto: CreateBlogDto) {
     const result = await this.blogService.createBlogAsync(createDto);
@@ -55,6 +62,8 @@ export class BlogsController {
   }
 
   // Cập nhật blog
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @AdminOnly()
   @Put(':id')
   async updateBlog(@Param('id') id: number, @Body() updateDto: UpdateBlogDto) {
     const result = await this.blogService.updateBlogAsync(id, updateDto);
@@ -63,6 +72,8 @@ export class BlogsController {
   }
 
   // Xóa blog
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @AdminOnly()
   @Delete(':id')
   async deleteBlog(@Param('id') id: number) {
     const success = await this.blogService.deleteBlogAsync(id);
@@ -83,20 +94,20 @@ export class BlogsController {
   }
 
   // Tăng view cho blog
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('0', '1', '2')
   @Post(':id/views')
-  async incrementViews(
-    @Param('id') id: number,
-    @Query('userId') userId?: string,
-    @Query('ipAddress') ipAddress?: string,
-  ) {
-    await this.blogService.incrementViewsAsync(id, userId, ipAddress);
+  async incrementViews(@Param('id') id: number, @Req() req) {
+    await this.blogService.incrementViewsAsync(id, req.user.userId, req.ip);
     return { success: true };
   }
 
   // Like/unlike blog
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('0', '1', '2')
   @Post(':id/like')
-  async toggleLike(@Param('id') id: number, @Query('userId') userId: string) {
-    return this.blogService.toggleLikeAsync(id, userId);
+  async toggleLike(@Param('id') id: number, @Req() req) {
+    return this.blogService.toggleLikeAsync(id, req.user.userId);
   }
 
   // Lấy thống kê

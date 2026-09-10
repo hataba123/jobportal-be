@@ -8,10 +8,14 @@ import {
   Param,
   Body,
   NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto, UpdateCategoryDto } from './category.dto';
 import { ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../common/guards/roles.guard';
+import { AdminOnly } from '../../../common/decorators/roles.decorator';
 
 @ApiTags('Categories')
 @Controller('api/categories')
@@ -33,12 +37,16 @@ export class CategoryController {
   }
 
   // Tạo danh mục
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @AdminOnly()
   @Post()
   async create(@Body() dto: CreateCategoryDto) {
     return this.categoryService.createAsync(dto);
   }
 
   // Cập nhật danh mục
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @AdminOnly()
   @Put(':id')
   async update(@Param('id') id: string, @Body() dto: UpdateCategoryDto) {
     const category = await this.categoryService.updateAsync(id, dto);
@@ -47,6 +55,8 @@ export class CategoryController {
   }
 
   // Xóa danh mục
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @AdminOnly()
   @Delete(':id')
   async delete(@Param('id') id: string) {
     const success = await this.categoryService.deleteAsync(id);

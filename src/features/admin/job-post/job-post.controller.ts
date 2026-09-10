@@ -11,12 +11,16 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Headers,
+  Query,
 } from '@nestjs/common';
 import { JobPostService } from './job-post.service';
 import { CreateJobPostDto, UpdateJobPostDto } from './job-post.dto';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { decodeVersion } from '../../../common/concurrency/concurrency';
+import { PageQueryDto } from '../../../common/dto/pagination.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('0')
@@ -26,7 +30,8 @@ export class JobPostController {
 
   // Lấy tất cả job post
   @Get()
-  async getAll() {
+  async getAll(@Query() query?: PageQueryDto) {
+    if (query) return this.jobPostService.getAllJobPostsPaged(query);
     return await this.jobPostService.getAllJobPosts();
   }
 
@@ -47,8 +52,8 @@ export class JobPostController {
   // Cập nhật job post
   @Put(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async update(@Param('id') id: string, @Body() dto: UpdateJobPostDto) {
-    const updated = await this.jobPostService.updateJobPost(id, dto);
+  async update(@Param('id') id: string, @Body() dto: UpdateJobPostDto, @Headers('if-match') ifMatch?: string) {
+    const updated = await this.jobPostService.updateJobPost(id, dto, decodeVersion(ifMatch));
     if (!updated) throw new NotFoundException('Job post not found');
     return;
   }
@@ -56,8 +61,8 @@ export class JobPostController {
   // Xóa job post
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id') id: string) {
-    const deleted = await this.jobPostService.deleteJobPost(id);
+  async delete(@Param('id') id: string, @Headers('if-match') ifMatch?: string) {
+    const deleted = await this.jobPostService.deleteJobPost(id, decodeVersion(ifMatch));
     if (!deleted) throw new NotFoundException('Job post not found');
     return;
   }

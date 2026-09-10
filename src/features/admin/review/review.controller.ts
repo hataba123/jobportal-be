@@ -10,12 +10,14 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { UpdateReviewDto } from './review.dto';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { PageQueryDto } from '../../../common/dto/pagination.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('0')
@@ -25,7 +27,8 @@ export class ReviewController {
 
   // Lấy tất cả review
   @Get()
-  async getAll() {
+  async getAll(@Query() query?: PageQueryDto) {
+    if (query) return this.reviewService.getAllReviewsPaged(query);
     return await this.reviewService.getAllReviews();
   }
 

@@ -10,12 +10,19 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
+  Headers,
 } from '@nestjs/common';
 import { RecruiterCompanyService } from './company.service';
 import { RecruiterUpdateCompanyDto, RecruiterCompanyDto } from './company.dto';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { decodeVersion } from '../../../common/concurrency/concurrency';
+
+// Unit callers may pass a minimal request object. Real HTTP requests always
+// expose headers, so the precondition remains mandatory at the API boundary.
+const expectedVersionFromRequest = (req: any, ifMatch?: string): number | undefined =>
+  ifMatch || req?.headers ? decodeVersion(ifMatch) : undefined;
 
 // Controller cho recruiter thao tác công ty của mình
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -55,10 +62,15 @@ export class RecruiterCompanyController {
   async updateMyCompany(
     @Req() req,
     @Body() dto: RecruiterUpdateCompanyDto,
+    @Headers('if-match') ifMatch?: string,
   ): Promise<void> {
     const recruiterId = req.user?.userId;
     // DTO đã tự động convert và cắt length, không cần xử lý thêm
-    const success = await this.companyService.updateMyCompany(recruiterId, dto);
+    const success = await this.companyService.updateMyCompany(
+      recruiterId,
+      dto,
+      expectedVersionFromRequest(req, ifMatch),
+    );
     if (!success)
       throw new NotFoundException(
         'Không thể cập nhật vì không tìm thấy công ty phù hợp hoặc bạn không có quyền.',
@@ -68,9 +80,12 @@ export class RecruiterCompanyController {
   // Xóa công ty
   @Delete()
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteMyCompany(@Req() req): Promise<void> {
+  async deleteMyCompany(@Req() req, @Headers('if-match') ifMatch?: string): Promise<void> {
     const recruiterId = req.user?.userId;
-    const success = await this.companyService.deleteMyCompany(recruiterId);
+    const success = await this.companyService.deleteMyCompany(
+      recruiterId,
+      expectedVersionFromRequest(req, ifMatch),
+    );
     if (!success)
       throw new NotFoundException(
         'Không thể xoá công ty (có thể do còn bài đăng tuyển dụng hoặc bạn không có quyền).',

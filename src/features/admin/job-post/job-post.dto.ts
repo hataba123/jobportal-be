@@ -83,6 +83,8 @@ export class JobPostDto {
   @IsOptional()
   @MaxLength(200)
   educationRequirement?: string;
+
+  version?: string;
 }
 
 export class CreateJobPostDto {

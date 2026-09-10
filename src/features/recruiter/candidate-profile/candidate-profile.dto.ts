@@ -9,7 +9,10 @@ import {
   IsInt,
   Min,
   IsNumber,
+  IsIn,
+  Max,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApplyStatus } from '@prisma/client';
 
 export class CandidateProfileBriefDto {
@@ -167,6 +170,7 @@ export class CandidateApplicationDto {
   cvUrl: string;
   @IsString()
   status: ApplyStatus;
+  version?: string;
 }
 
 export class CandidateSearchRequest {
@@ -180,5 +184,40 @@ export class CandidateSearchRequest {
   @IsOptional()
   education?: string;
   @IsOptional()
+  @Type(() => Number)
   minYearsExperience?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  experienceFrom?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  experienceTo?: number;
+
+  @IsString()
+  @IsOptional()
+  location?: string;
+
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @Type(() => Number)
+  @IsOptional()
+  page = 1;
+
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @Type(() => Number)
+  @IsOptional()
+  pageSize = 20;
+
+  @IsString()
+  @IsOptional()
+  sortBy?: string;
+
+  @IsIn(['asc', 'desc'])
+  @IsOptional()
+  sortDir: 'asc' | 'desc' = 'desc';
 }

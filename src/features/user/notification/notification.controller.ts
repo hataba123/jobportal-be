@@ -8,10 +8,12 @@ import {
   Req,
   NotFoundException,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { PageQueryDto } from '../../../common/dto/pagination.dto';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
@@ -22,8 +24,9 @@ export class NotificationController {
 
   // Lấy danh sách thông báo của user hiện tại
   @Get()
-  async getMyNotifications(@Req() req) {
+  async getMyNotifications(@Req() req, @Query() query?: PageQueryDto) {
     const userId = req.user.userId;
+    if (query) return this.notificationService.getByUserIdPaged(userId, query);
     return this.notificationService.getByUserIdAsync(userId);
   }
 

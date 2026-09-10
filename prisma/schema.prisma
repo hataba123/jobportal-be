@@ -13,10 +13,37 @@ datasource db {
 // Enum trạng thái apply job
 /// Trạng thái ứng tuyển
 enum ApplyStatus {
-  Pending
-  Reviewed
-  Accepted
+  Applied
+  Screening
+  Interview
+  Offer
+  Hired
   Rejected
+  Withdrawn
+}
+
+enum InterviewType {
+  Online
+  Onsite
+  Phone
+}
+
+enum InterviewStatus {
+  Scheduled
+  Completed
+  Cancelled
+}
+
+enum InterviewResult {
+  Pending
+  Passed
+  Failed
+}
+
+enum JobReportStatus {
+  Pending
+  Resolved
+  Dismissed
 }
 
 // Enum vai trò người dùng
@@ -29,26 +56,30 @@ enum UserRole {
 
 /// Bảng người dùng hệ thống
 model User {
-  id                  String               @id @default(uuid())
-  email               String               @unique
-  passwordHash        String
-  fullName            String
-  createdAt           DateTime             @default(now())
-  deletedAt           DateTime?
-  role                UserRole             @default(Candidate)
-  passwordVersion     Int                  @default(0)
+  id                      String                   @id @default(uuid())
+  email                   String                   @unique
+  passwordHash            String
+  fullName                String
+  createdAt               DateTime                 @default(now())
+  deletedAt               DateTime?
+  role                    UserRole                 @default(Candidate)
+  passwordVersion         Int                      @default(0)
   // Quan hệ
-  candidateProfile    CandidateProfile?
-  jobPosts            JobPost[]            @relation("EmployerJobs")
-  jobs                Job[]                @relation("CandidateJobs")
-  notifications       Notification[]
-  reviews             Review[]
-  savedJobs           SavedJob[]
-  oauthAccounts       OAuthAccount[]
-  passwordResetTokens PasswordResetToken[]
-  matchResults        MatchResult[]
-  paymentOrders       PaymentOrder[]
-  creditLedger        CreditLedger[]
+  candidateProfile        CandidateProfile?
+  jobPosts                JobPost[]                @relation("EmployerJobs")
+  jobs                    Job[]                    @relation("CandidateJobs")
+  notifications           Notification[]
+  reviews                 Review[]
+  savedJobs               SavedJob[]
+  oauthAccounts           OAuthAccount[]
+  passwordResetTokens     PasswordResetToken[]
+  matchResults            MatchResult[]
+  paymentOrders           PaymentOrder[]
+  creditLedger            CreditLedger[]
+  interviews              Interview[]              @relation("InterviewerInterviews")
+  reportedJobs            JobReport[]              @relation("ReporterReports")
+  newsletterSubscriptions NewsletterSubscription[]
+  auditLogs               AuditLog[]
 
   @@index([deletedAt])
 }
@@ -168,24 +199,36 @@ model BlogLike {
 
 /// Hồ sơ ứng viên
 model CandidateProfile {
-  id                String    @id @default(uuid())
-  userId            String    @unique
-  user              User      @relation(fields: [userId], references: [id])
-  resumeUrl         String?   @db.VarChar(300)
-  experience        String?   @db.VarChar(1000)
+  id                String           @id @default(uuid())
+  userId            String           @unique
+  user              User             @relation(fields: [userId], references: [id])
+  resumeUrl         String?          @db.VarChar(300)
+  experience        String?          @db.VarChar(1000)
   experienceYears   Int?
-  skills            String?   @db.VarChar(500)
-  education         String?   @db.VarChar(200)
-  preferredLocation String?   @db.VarChar(200)
-  preferredJobType  String?   @db.VarChar(100)
-  expectedSalary    Decimal?  @db.Decimal(18, 2)
+  skills            String?          @db.VarChar(500)
+  education         String?          @db.VarChar(200)
+  preferredLocation String?          @db.VarChar(200)
+  preferredJobType  String?          @db.VarChar(100)
+  expectedSalary    Decimal?         @db.Decimal(18, 2)
   dob               DateTime?
-  gender            String?   @db.VarChar(10)
-  portfolioUrl      String?   @db.VarChar(300)
-  linkedinUrl       String?   @db.VarChar(300)
-  githubUrl         String?   @db.VarChar(300)
-  certificates      String?   @db.VarChar(1000)
-  summary           String?   @db.VarChar(1000)
+  gender            String?          @db.VarChar(10)
+  portfolioUrl      String?          @db.VarChar(300)
+  linkedinUrl       String?          @db.VarChar(300)
+  githubUrl         String?          @db.VarChar(300)
+  certificates      String?          @db.VarChar(1000)
+  summary           String?          @db.VarChar(1000)
+  candidateSkills   CandidateSkill[]
+}
+
+model CandidateSkill {
+  id                 String           @id @default(uuid())
+  candidateProfileId String
+  normalizedName     String           @db.VarChar(100)
+  displayName        String           @db.VarChar(100)
+  candidateProfile   CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateProfileId, normalizedName])
+  @@index([normalizedName, candidateProfileId])
 }
 
 /// Danh mục ngành nghề
@@ -199,41 +242,146 @@ model Category {
 
 /// Công ty
 model Company {
-  id          String    @id @default(uuid())
-  name        String    @db.VarChar(200)
-  logo        String?   @db.VarChar(300)
-  description String?   @db.VarChar(1000)
-  location    String?   @db.VarChar(100)
-  employees   String?   @db.VarChar(50)
-  industry    String?   @db.VarChar(100)
-  openJobs    Int
-  rating      Float
-  website     String?   @db.VarChar(200)
-  founded     String?   @db.VarChar(10)
-  tags        String?   @db.VarChar(500)
-  userId      String?
-  deletedAt   DateTime?
+  id                 String                    @id @default(uuid())
+  name               String                    @db.VarChar(200)
+  logo               String?                   @db.VarChar(300)
+  description        String?                   @db.VarChar(1000)
+  location           String?                   @db.VarChar(100)
+  employees          String?                   @db.VarChar(50)
+  industry           String?                   @db.VarChar(100)
+  openJobs           Int
+  rating             Float
+  website            String?                   @db.VarChar(200)
+  founded            String?                   @db.VarChar(10)
+  tags               String?                   @db.VarChar(500)
+  userId             String?
+  deletedAt          DateTime?
   verificationStatus CompanyVerificationStatus @default(Pending)
   verifiedAt         DateTime?
-  jobPosts    JobPost[]
-  reviews     Review[]
+  version            Int                       @default(0)
+  jobPosts           JobPost[]
+  reviews            Review[]
 
   @@index([deletedAt])
+  @@index([verificationStatus, name])
 }
 
 /// Bảng ứng tuyển job
 model Job {
-  id          String      @id @default(uuid())
-  jobPostId   String
-  candidateId String
-  appliedAt   DateTime
-  cvUrl       String?     @db.VarChar(300)
-  status      ApplyStatus @default(Pending)
-  jobPost     JobPost     @relation(fields: [jobPostId], references: [id])
-  candidate   User        @relation("CandidateJobs", fields: [candidateId], references: [id])
+  id            String                     @id @default(uuid())
+  jobPostId     String
+  candidateId   String
+  appliedAt     DateTime
+  cvUrl         String?                    @db.VarChar(300)
+  status        ApplyStatus                @default(Applied)
+  version       Int                        @default(0)
+  jobPost       JobPost                    @relation(fields: [jobPostId], references: [id])
+  candidate     User                       @relation("CandidateJobs", fields: [candidateId], references: [id])
+  statusHistory ApplicationStatusHistory[]
+  interviews    Interview[]
 
   @@unique([candidateId, jobPostId])
   @@index([jobPostId, status])
+  @@index([jobPostId, status, appliedAt])
+  @@index([candidateId, appliedAt])
+}
+
+model ApplicationStatusHistory {
+  id            String       @id @default(uuid())
+  applicationId String
+  fromStatus    ApplyStatus?
+  toStatus      ApplyStatus
+  changedBy     String?
+  changedAt     DateTime     @default(now())
+  reason        String?      @db.VarChar(1000)
+  application   Job          @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, changedAt])
+}
+
+model Interview {
+  id            String          @id @default(uuid())
+  applicationId String
+  type          InterviewType
+  startAt       DateTime
+  endAt         DateTime
+  location      String?         @db.VarChar(500)
+  meetingUrl    String?         @db.VarChar(500)
+  interviewerId String
+  status        InterviewStatus @default(Scheduled)
+  result        InterviewResult @default(Pending)
+  notes         String?         @db.VarChar(4000)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime?
+  version       Int             @default(0)
+  application   Job             @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  interviewer   User            @relation("InterviewerInterviews", fields: [interviewerId], references: [id], onDelete: Restrict)
+
+  @@index([interviewerId, startAt, status])
+  @@index([applicationId, startAt])
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  actorId       String?
+  action        String   @db.VarChar(100)
+  entityType    String   @db.VarChar(100)
+  entityId      String   @db.VarChar(100)
+  before        Json?
+  after         Json?
+  ipAddress     String?  @db.VarChar(64)
+  correlationId String?  @db.VarChar(64)
+  createdAt     DateTime @default(now())
+  actor         User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorId, createdAt])
+}
+
+model OutboxMessage {
+  id               String    @id @default(uuid())
+  type             String    @db.VarChar(100)
+  payload          Json
+  occurredAt       DateTime  @default(now())
+  processedAt      DateTime?
+  attempts         Int       @default(0)
+  nextAttemptAt    DateTime?
+  lastError        String?   @db.VarChar(2000)
+  deadLetteredAt   DateTime?
+  deduplicationKey String?   @unique @db.VarChar(200)
+  correlationId    String?   @db.VarChar(64)
+
+  @@index([processedAt, nextAttemptAt, occurredAt])
+}
+
+model JobReport {
+  id          String          @id @default(uuid())
+  jobPostId   String
+  reporterId  String
+  reason      String          @db.VarChar(200)
+  description String?         @db.VarChar(2000)
+  status      JobReportStatus @default(Pending)
+  createdAt   DateTime        @default(now())
+  resolvedAt  DateTime?
+  resolvedBy  String?
+  version     Int             @default(0)
+  jobPost     JobPost         @relation(fields: [jobPostId], references: [id], onDelete: Restrict)
+  reporter    User            @relation("ReporterReports", fields: [reporterId], references: [id], onDelete: Restrict)
+
+  @@index([status, createdAt])
+}
+
+model NewsletterSubscription {
+  id             String    @id @default(uuid())
+  userId         String
+  email          String    @db.VarChar(320)
+  isActive       Boolean   @default(true)
+  subscribedAt   DateTime  @default(now())
+  unsubscribedAt DateTime?
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([email, isActive])
+  @@index([isActive, subscribedAt])
 }
 
 /// Bảng đăng tin tuyển dụng
@@ -260,11 +408,15 @@ model JobPost {
   educationRequirement String?       @db.VarChar(200)
   categoryId           String
   category             Category      @relation(fields: [categoryId], references: [id])
+  version              Int           @default(0)
   jobs                 Job[]
   savedJobs            SavedJob[]
   matchResults         MatchResult[]
+  reports              JobReport[]
 
   @@index([deletedAt])
+  @@index([status, expiresAt, createdAt])
+  @@index([employerId, status, createdAt])
 }
 
 /// Kết quả matching được tính theo phiên bản thuật toán và fingerprint đầu vào
@@ -347,13 +499,17 @@ model CreditLedger {
 
 /// Thông báo
 model Notification {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  message   String
-  read      Boolean
-  createdAt DateTime @default(now())
-  type      String?  @db.VarChar(50)
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  message         String
+  read            Boolean
+  createdAt       DateTime @default(now())
+  type            String?  @db.VarChar(50)
+  sourceMessageId String?  @db.VarChar(64)
+
+  @@unique([sourceMessageId, userId])
+  @@index([userId, createdAt])
 }
 
 /// Đánh giá công ty

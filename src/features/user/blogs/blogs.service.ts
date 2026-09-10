@@ -78,6 +78,7 @@ export class BlogService implements IBlogService {
       return {
         blogs: blogDtos,
         total,
+        totalCount: total,
         page,
         limit,
         totalPages: Math.ceil(total / limit),
@@ -244,11 +245,10 @@ export class BlogService implements IBlogService {
     ipAddress?: string,
   ): Promise<void> {
     try {
-      await this.prisma.blog.update({
-        where: { id },
-        data: { views: { increment: 1 } },
+      await this.prisma.$transaction(async (tx) => {
+        await tx.blog.update({ where: { id }, data: { views: { increment: 1 } } });
+        await tx.blogView.create({ data: { blogId: id, userId, ipAddress } });
       });
-      // Nếu có bảng BlogView thì insert thêm record view vào đó
     } catch (ex) {
       this.logger.error(`Error incrementing views for blog: ${id}`, ex);
       throw ex;
@@ -257,8 +257,17 @@ export class BlogService implements IBlogService {
 
   // Like/unlike blog
   async toggleLikeAsync(id: number, userId: string): Promise<any> {
-    // Cần bổ sung logic like/unlike theo schema thực tế
-    return { likes: 0, isLiked: false };
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.blogLike.findFirst({ where: { blogId: id, userId } });
+      if (existing) {
+        await tx.blogLike.delete({ where: { id: existing.id } });
+        const blog = await tx.blog.update({ where: { id }, data: { likes: { decrement: 1 } }, select: { likes: true } });
+        return { likes: Math.max(0, blog.likes), isLiked: false };
+      }
+      await tx.blogLike.create({ data: { blogId: id, userId } });
+      const blog = await tx.blog.update({ where: { id }, data: { likes: { increment: 1 } }, select: { likes: true } });
+      return { likes: blog.likes, isLiked: true };
+    });
   }
 
   // Lấy thống kê blog

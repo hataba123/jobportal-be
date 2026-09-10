@@ -6,6 +6,7 @@ import {
   CreateNotificationDto,
 } from '../../admin/notification/notification.dto';
 import { INotificationService } from '../../admin/notification/notification.iservice';
+import { PageQueryDto, PagedResult } from '../../../common/dto/pagination.dto';
 
 @Injectable()
 
@@ -19,6 +20,12 @@ export class NotificationService implements INotificationService {
     return [];
   }
 
+  async getAllPaged(query: PageQueryDto): Promise<PagedResult<NotificationDto>> {
+    const page = Math.max(1, Number(query.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(query.pageSize) || 20));
+    return { items: [], total: 0, totalCount: 0, page, pageSize, totalPages: 0 };
+  }
+
   // Lấy chi tiết thông báo theo id
   async getById(id: string): Promise<NotificationDto | null> {
     return this.getByIdAsync(id);
@@ -27,6 +34,22 @@ export class NotificationService implements INotificationService {
   // Lấy thông báo theo userId
   async getByUserId(userId: string): Promise<NotificationDto[]> {
     return this.getByUserIdAsync(userId);
+  }
+
+  async getByUserIdPaged(userId: string, query: PageQueryDto): Promise<PagedResult<NotificationDto>> {
+    const page = Math.max(1, Number(query.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, Number(query.pageSize) || 20));
+    const [totalCount, notis] = await this.prisma.$transaction([
+      this.prisma.notification.count({ where: { userId } }),
+      this.prisma.notification.findMany({
+        where: { userId },
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ]);
+    const items = notis.map((n) => this.toDto(n));
+    return { items, total: totalCount, totalCount, page, pageSize, totalPages: Math.ceil(totalCount / pageSize) };
   }
 
   // Tạo mới thông báo (chỉ dùng cho admin)

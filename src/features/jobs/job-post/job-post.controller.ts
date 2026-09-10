@@ -10,6 +10,8 @@
   Query,
   UseGuards,
   NotFoundException,
+  Headers,
+  Res,
 } from '@nestjs/common';
 import { JobPostService } from './job-post.service';
 import { CreateJobPostDto, UpdateJobPostDto } from './job-post.dto';
@@ -19,6 +21,8 @@ import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { UserRoleEnum } from '../../../features/auth/auth.dto';
 import { PageQueryDto } from '../../../common/dto/pagination.dto';
+import { decodeVersion } from '../../../common/concurrency/concurrency';
+import { encodeVersion } from '../../../common/concurrency/concurrency';
 
 // Controller quản lý job post
 @ApiTags('JobPost')
@@ -47,26 +51,29 @@ export class JobPostController {
     @Req() req,
     @Param('id') id: string,
     @Body() dto: UpdateJobPostDto,
+    @Headers('if-match') ifMatch?: string,
   ) {
-    return this.jobPostService.update(id, req.user.userId, dto);
+    return this.jobPostService.update(id, req.user.userId, dto, decodeVersion(ifMatch));
   }
 
   // Xóa job post
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoleEnum.Recruiter.toString())
   @Delete(':id')
-  async delete(@Req() req, @Param('id') id: string) {
-    return this.jobPostService.delete(id, req.user.userId);
+  async delete(@Req() req, @Param('id') id: string, @Headers('if-match') ifMatch?: string) {
+    return this.jobPostService.delete(id, req.user.userId, decodeVersion(ifMatch));
   }
 
   // Lấy chi tiết job post theo id
   // Trả về 404 nếu không tìm thấy, log id để debug
   @Get(':id')
-  async getById(@Param('id') id: string) {
+  async getById(@Param('id') id: string, @Res({ passthrough: true }) response: any) {
     const jobPost = await this.jobPostService.getById(id);
     if (!jobPost)
       throw new NotFoundException('Không tìm thấy job post với id: ' + id);
-    return jobPost;
+    const version = encodeVersion(jobPost.version ?? 0);
+    response.header?.('etag', `"${version}"`);
+    return { ...jobPost, version };
   }
 
   // Lấy tất cả job post

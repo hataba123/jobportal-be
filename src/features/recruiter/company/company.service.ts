@@ -1,13 +1,15 @@
 ﻿// Service xử lý logic công ty cho recruiter
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { RecruiterCompanyDto, RecruiterUpdateCompanyDto } from './company.dto';
 import { IRecruiterCompanyService } from './company.iservice';
+import { AuditLogService } from '../../../common/audit/audit-log.service';
+import { concurrencyConflict, encodeVersion } from '../../../common/concurrency/concurrency';
 
 // Service thao tác công ty cho recruiter
 @Injectable()
 export class RecruiterCompanyService implements IRecruiterCompanyService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, @Optional() private readonly audit?: AuditLogService) {}
 
   // Lấy công ty mà recruiter đang quản lý (dựa vào jobPost)
   async getMyCompany(employerId: string): Promise<RecruiterCompanyDto | null> {
@@ -27,6 +29,7 @@ export class RecruiterCompanyService implements IRecruiterCompanyService {
   async updateMyCompany(
     employerId: string,
     dto: RecruiterUpdateCompanyDto,
+    expectedVersion?: number,
   ): Promise<boolean> {
     const jobPost = await this.prisma.jobPost.findFirst({
       where: {
@@ -54,15 +57,21 @@ export class RecruiterCompanyService implements IRecruiterCompanyService {
       founded,
       tags: Array.isArray(dto.tags) ? dto.tags.join(',') : (dto.tags ?? ''),
     };
-    await this.prisma.company.update({
-      where: { id: jobPost.company.id },
-      data,
-    });
+    if (expectedVersion === undefined) {
+      await this.prisma.company.update({ where: { id: jobPost.company.id }, data });
+    } else {
+      const updated = await this.prisma.company.updateMany({ where: { id: jobPost.company.id, version: expectedVersion, deletedAt: null }, data: { ...data, version: { increment: 1 } } });
+      if (updated.count !== 1) {
+        const current = await this.prisma.company.findUnique({ where: { id: jobPost.company.id }, select: { version: true } });
+        throw concurrencyConflict(current?.version ?? 0);
+      }
+      await this.audit?.add(this.prisma, { actorId: employerId, action: 'Company.Updated', entityType: 'Company', entityId: jobPost.company.id, after: { fields: Object.keys(dto) } });
+    }
     return true;
   }
 
   // Xóa công ty nếu không còn job post nào
-  async deleteMyCompany(employerId: string): Promise<boolean> {
+  async deleteMyCompany(employerId: string, expectedVersion?: number): Promise<boolean> {
     const jobPost = await this.prisma.jobPost.findFirst({
       where: {
         employerId,
@@ -76,10 +85,18 @@ export class RecruiterCompanyService implements IRecruiterCompanyService {
       where: { companyId: jobPost.company.id, deletedAt: null },
     });
     if (count > 0) return false;
-    await this.prisma.company.update({
-      where: { id: jobPost.company.id },
-      data: { deletedAt: new Date() },
-    });
+    const companyId = jobPost.company.id;
+    if (expectedVersion === undefined) {
+      await this.prisma.company.delete({ where: { id: companyId } }).catch(async () => {
+        await this.prisma.company.update({ where: { id: companyId }, data: { deletedAt: new Date() } });
+      });
+    } else {
+      const updated = await this.prisma.company.updateMany({ where: { id: companyId, version: expectedVersion, deletedAt: null }, data: { deletedAt: new Date(), version: { increment: 1 } } });
+      if (updated.count !== 1) {
+        const current = await this.prisma.company.findUnique({ where: { id: companyId }, select: { version: true } });
+        throw concurrencyConflict(current?.version ?? 0);
+      }
+    }
     return true;
   }
 
@@ -100,6 +117,7 @@ export class RecruiterCompanyService implements IRecruiterCompanyService {
       tags: entity.tags ?? undefined,
       verificationStatus: entity.verificationStatus,
       verifiedAt: entity.verifiedAt ?? undefined,
+      version: encodeVersion(entity.version ?? 0),
     };
   }
 }

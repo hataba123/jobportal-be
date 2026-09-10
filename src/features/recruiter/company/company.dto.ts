@@ -67,6 +67,7 @@ export class RecruiterCompanyDto {
   @IsEnum(CompanyVerificationStatus)
   verificationStatus: CompanyVerificationStatus;
   verifiedAt?: Date;
+  version?: string;
 }
 
 // DTO cập nhật công ty

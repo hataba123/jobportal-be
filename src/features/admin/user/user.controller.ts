@@ -22,6 +22,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
@@ -33,6 +34,7 @@ import {
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { PageQueryDto } from '../../../common/dto/pagination.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('0')
@@ -42,7 +44,19 @@ export class UserController {
 
   // Lấy tất cả user, mapping role enum string -> số chuẩn hóa
   @Get()
-  async getAll() {
+  async getAll(@Query() query?: PageQueryDto) {
+    // Giữ tương thích với các caller nội bộ gọi method trực tiếp; HTTP luôn
+    // nhận object query và dùng đường dẫn paging server-side.
+    if (query) {
+      const paged = await this.userService.getAllUsersPaged(query);
+      return {
+        ...paged,
+        items: paged.items.map((u) => ({
+          ...u,
+          role: UserRoleStringToIndex[u.role as string] ?? UserRoleEnum.Candidate,
+        })),
+      };
+    }
     const users = await this.userService.getAllUsers();
     return users.map((u) => ({
       ...u,

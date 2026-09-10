@@ -12,6 +12,8 @@ import {
   HttpStatus,
   UseGuards,
   Patch,
+  Headers,
+  Query,
 } from '@nestjs/common';
 import { CompanyService } from './company.service';
 import {
@@ -22,6 +24,8 @@ import {
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
+import { decodeVersion } from '../../../common/concurrency/concurrency';
+import { PageQueryDto } from '../../../common/dto/pagination.dto';
 
 // Controller quản lý công ty cho admin
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -33,7 +37,8 @@ export class CompanyController {
 
   // Lấy tất cả công ty
   @Get()
-  async getAll() {
+  async getAll(@Query() query?: PageQueryDto) {
+    if (query) return this.companyService.getAllCompaniesPaged(query);
     return await this.companyService.getAllCompanies();
   }
 
@@ -54,8 +59,8 @@ export class CompanyController {
   // Cập nhật công ty
   @Put(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async update(@Param('id') id: string, @Body() dto: UpdateCompanyDto) {
-    const updated = await this.companyService.updateCompany(id, dto);
+  async update(@Param('id') id: string, @Body() dto: UpdateCompanyDto, @Headers('if-match') ifMatch?: string) {
+    const updated = await this.companyService.updateCompany(id, dto, decodeVersion(ifMatch));
     if (!updated) throw new NotFoundException('Company not found');
     return;
   }
@@ -63,8 +68,8 @@ export class CompanyController {
   // Xóa công ty
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id') id: string) {
-    const deleted = await this.companyService.deleteCompany(id);
+  async delete(@Param('id') id: string, @Headers('if-match') ifMatch?: string) {
+    const deleted = await this.companyService.deleteCompany(id, decodeVersion(ifMatch));
     if (!deleted) throw new NotFoundException('Company not found');
     return;
   }
@@ -73,8 +78,9 @@ export class CompanyController {
   async updateVerification(
     @Param('id') id: string,
     @Body() dto: UpdateCompanyVerificationDto,
+    @Headers('if-match') ifMatch?: string,
   ) {
-    const company = await this.companyService.updateVerificationStatus(id, dto);
+    const company = await this.companyService.updateVerificationStatus(id, dto, decodeVersion(ifMatch));
     if (!company) throw new NotFoundException('Company not found');
     return company;
   }
