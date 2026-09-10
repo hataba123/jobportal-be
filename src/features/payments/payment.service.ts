@@ -84,6 +84,30 @@ export class PaymentService {
     return this.toOrderDto(order);
   }
 
+  async listPaymentOrders(userId?: string) {
+    const where: Prisma.PaymentOrderWhereInput = userId ? { userId } : {};
+    const orders = await this.prisma.paymentOrder.findMany({
+      where,
+      include: { user: true, plan: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return orders.map((o) => ({
+      id: o.id,
+      userId: o.userId,
+      userFullName: o.user ? o.user.fullName : '',
+      userEmail: o.user ? o.user.email : '',
+      planId: o.planId,
+      planName: o.plan ? o.plan.name : '',
+      vnpTxnRef: o.vnpTxnRef,
+      amount: Number(o.amount),
+      currency: o.currency,
+      status: o.status,
+      createdAt: o.createdAt,
+      paidAt: o.paidAt,
+      expiresAt: o.expiresAt,
+    }));
+  }
+
   async processVnpayIpn(query: Record<string, string>): Promise<{ RspCode: string; Message: string }> {
     const secret = process.env.VNPAY_HASH_SECRET;
     if (!secret) return { RspCode: '99', Message: 'Chưa cấu hình VNPAY' };

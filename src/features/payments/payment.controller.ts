@@ -27,6 +27,20 @@ export class PaymentController {
     return this.paymentService.getPaymentOrder(id, req.user.userId, String(req.user.role) === '0');
   }
 
+  @Get('admin/payment-orders')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('0')
+  getAllOrders() {
+    return this.paymentService.listPaymentOrders();
+  }
+
+  @Get('recruiter/payment-orders')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('0', '1')
+  getMyOrders(@Req() req: any) {
+    return this.paymentService.listPaymentOrders(req.user.userId);
+  }
+
   @Get('payments/vnpay/return')
   vnpayReturn(@Query() query: Record<string, string>) {
     return { responseCode: query.vnp_ResponseCode ?? null, txnRef: query.vnp_TxnRef ?? null };
