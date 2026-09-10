@@ -21,6 +21,36 @@ async function upsertUser(id, email, fullName, role, passwordHash) {
   });
 }
 
+async function upsertBlogAuthor({ name, avatar, role }) {
+  const existing = await prisma.blogAuthor.findFirst({ where: { name } });
+  const data = { name, avatar, role };
+  if (existing) {
+    return prisma.blogAuthor.update({ where: { id: existing.id }, data });
+  }
+  return prisma.blogAuthor.create({ data });
+}
+
+async function upsertBlog(authorId, fixture) {
+  const data = {
+    title: fixture.title,
+    excerpt: fixture.excerpt,
+    content: fixture.content,
+    slug: fixture.slug,
+    category: fixture.category,
+    tags: JSON.stringify(fixture.tags),
+    publishedAt: new Date(fixture.publishedAt),
+    readTime: fixture.readTime,
+    featured: fixture.featured,
+    image: fixture.image,
+    authorId,
+  };
+  const existing = await prisma.blog.findFirst({ where: { slug: fixture.slug } });
+  if (existing) {
+    return prisma.blog.update({ where: { id: existing.id }, data });
+  }
+  return prisma.blog.create({ data });
+}
+
 async function main() {
   const seedPassword = process.env.SEED_PASSWORD;
   if (!seedPassword) {
@@ -118,6 +148,53 @@ async function main() {
       logo: '/uploads/logo/jobportal-demo.svg',
     },
   });
+
+  const blogAuthor = await upsertBlogAuthor({
+    name: 'JobPortal Editorial Team',
+    avatar: '/uploads/logo/jobportal-demo.svg',
+    role: 'Admin',
+  });
+  const blogFixtures = [
+    {
+      slug: 'xay-dung-ho-so-nghe-nghiep-noi-bat',
+      title: 'Cách xây dựng hồ sơ nghề nghiệp nổi bật năm 2026',
+      excerpt: 'Một hồ sơ rõ ràng, có số liệu và tập trung vào kết quả giúp nhà tuyển dụng hiểu nhanh giá trị của bạn.',
+      content: 'Bắt đầu bằng phần giới thiệu ngắn, sau đó ưu tiên thành tựu có thể đo lường và các kỹ năng phù hợp với vị trí đang ứng tuyển. Hãy cập nhật hồ sơ định kỳ để phản ánh đúng kinh nghiệm mới nhất.',
+      category: 'Phát triển sự nghiệp',
+      tags: ['CV', 'Career', 'Job search'],
+      readTime: '6 phút',
+      featured: true,
+      image: '/uploads/images/blog-career-profile.jpg',
+      publishedAt: '2026-08-20T08:00:00.000Z',
+    },
+    {
+      slug: 'ky-nang-cong-tac-trong-doi-ngu',
+      title: 'Kỹ năng cộng tác giúp bạn nổi bật trong đội ngũ',
+      excerpt: 'Giao tiếp chủ động, phản hồi có cấu trúc và tinh thần chia sẻ là nền tảng của mọi đội ngũ hiệu quả.',
+      content: 'Khi làm việc nhóm, hãy thống nhất mục tiêu, ghi nhận trách nhiệm và chia sẻ tiến độ minh bạch. Những thói quen nhỏ này giúp giảm hiểu nhầm và tạo niềm tin lâu dài giữa các thành viên.',
+      category: 'Kỹ năng',
+      tags: ['Teamwork', 'Soft skills', 'Productivity'],
+      readTime: '5 phút',
+      featured: true,
+      image: '/uploads/images/blog-team-collaboration.jpg',
+      publishedAt: '2026-08-12T08:00:00.000Z',
+    },
+    {
+      slug: 'checklist-chuan-bi-phong-van-cong-nghe',
+      title: 'Checklist chuẩn bị phỏng vấn vị trí công nghệ',
+      excerpt: 'Từ nghiên cứu công ty đến phần trình bày dự án, đây là checklist ngắn giúp bạn tự tin trước buổi phỏng vấn.',
+      content: 'Đọc kỹ mô tả công việc, chuẩn bị hai đến ba câu chuyện theo mô hình STAR và kiểm tra lại các dự án có liên quan. Cuối buổi, hãy đặt câu hỏi về đội ngũ, kỳ vọng 90 ngày đầu và cách đo lường thành công.',
+      category: 'Phỏng vấn',
+      tags: ['Interview', 'Technology', 'Preparation'],
+      readTime: '7 phút',
+      featured: false,
+      image: '/uploads/images/blog-tech-workspace.jpg',
+      publishedAt: '2026-08-05T08:00:00.000Z',
+    },
+  ];
+  for (const fixture of blogFixtures) {
+    await upsertBlog(blogAuthor.id, fixture);
+  }
 
   await prisma.servicePlan.upsert({
     where: { id: ids.plan },
