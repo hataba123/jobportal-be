@@ -33,6 +33,7 @@ import { SavedJobModule } from './features/user/saved-job/saved-job.module';
 import { MatchingModule } from './features/matching/matching.module';
 import { PaymentModule } from './features/payments/payment.module';
 import { HealthController } from './health.controller';
+import { MediaModule } from './features/media/media.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { HealthController } from './health.controller';
     SavedJobModule,
     MatchingModule,
     PaymentModule,
+    MediaModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

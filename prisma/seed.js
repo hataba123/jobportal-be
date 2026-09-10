@@ -70,6 +70,7 @@ async function main() {
       rating: 5,
       verificationStatus: 'Verified',
       verifiedAt: new Date(),
+      logo: '/uploads/logo/jobportal-demo.svg',
       deletedAt: null,
     },
     create: {
@@ -84,6 +85,7 @@ async function main() {
       userId: ids.recruiter,
       verificationStatus: 'Verified',
       verifiedAt: new Date(),
+      logo: '/uploads/logo/jobportal-demo.svg',
     },
   });
 
@@ -94,6 +96,7 @@ async function main() {
       status: 'Active',
       expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       deletedAt: null,
+      logo: '/uploads/logo/jobportal-demo.svg',
     },
     create: {
       id: ids.jobPost,
@@ -112,6 +115,7 @@ async function main() {
       minExperienceYears: 2,
       educationRequirement: 'Đại học',
       categoryId: ids.category,
+      logo: '/uploads/logo/jobportal-demo.svg',
     },
   });
 
